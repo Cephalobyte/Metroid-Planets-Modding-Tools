@@ -1,48 +1,67 @@
-from utils import *
+from modules.utils import *
 
 worldFileIn, worldFileOut = getFilesDialog('world','json')
 
 worldDict = openWorld(worldFileIn)
 
-if getYesNoDialog( #choose tile display mode
-	'Translate tile numbers to binary?',
+tileMode = getOptionDialog(#choose tile display mode
+	'Choose tile number display mode',
 	[
-		'String with a space each 4 char',
-		'(Default option when skipping)',
-		'Enter n to see other choices'
+		'raw mode - return the original number <float>',
+		'binary mode - (default) return the binary equivalent separated each 4 characters <string>',
+		'simple mode - return a simplified representation of values (not recommended as it is incomplete) <string>.\n      The 4 numbers for tile numbers are : Id, Palette Id, Animated Palette Offset, Transform\n    The 4 numbers for liquid numbers are : Id, Unknown Number, Liquid Set Id, Transform',
 	],
-	True #default
-): tileMode = 1 #binary mode
-elif getYesNoDialog(
-	'Translate tile numbers to a simplified list?',
-	[
-		'Tiles are separated as such:',
-		'  Id Palette Offset Transform',
-		'Liquids are separated as such:',
-		'  ID ? Set Transform',
-		'Enter n or skip to keep original number'
-	],
-	False #default
-): tileMode = 2 #simple mode
-else: tileMode = 0 #raw mode
+	{},
+	1
+)
+# if getYesNoDialog( #choose tile display mode
+# 	'Translate tile numbers to binary?',
+# 	[
+# 		'String with a space each 4 char',
+# 		'(Default option when skipping)',
+# 		'Enter n to see other choices'
+# 	],
+# 	True #default
+# ): tileMode = 1 #binary mode
+# elif getYesNoDialog(
+# 	'Translate tile numbers to a simplified list?',
+# 	[
+# 		'Tiles are separated as such:',
+# 		'  Id Palette Offset Transform',
+# 		'Liquids are separated as such:',
+# 		'  ID ? Set Transform',
+# 		'Enter n or skip to keep original number'
+# 	],
+# 	False #default
+# ): tileMode = 2 #simple mode
+# else: tileMode = 0 #raw mode
 
-if getYesNoDialog( #get palette color display mode
-	'Translate palette color values to hexadecimal?',
+colMode = getOptionDialog(
+	'Choose palette color display mode',
 	[
-		'String with hex values ("bcbcbc")',
-		'(Default option when skipping)',
-		'Enter n to keep raw number'
+		'raw mode - return the original number <int>',
+		'hexadecimal mode - (default) return the hex color code equivalent <string>'
 	],
-	True #default
-):
-	colMode = 1 #hexadecimal mode
-else: colMode = 0 #raw mode
+	{},
+	1
+)
+# if getYesNoDialog( #get palette color display mode
+# 	'Translate palette color values to hexadecimal?',
+# 	[
+# 		'String with hex values ("bcbcbc")',
+# 		'(Default option when skipping)',
+# 		'Enter n to keep raw number'
+# 	],
+# 	True #default
+# ):
+# 	colMode = 1 #hexadecimal mode
+# else: colMode = 0 #raw mode
 
-steptodo('IMPORTING WORLD...')
+progress('IMPORTING WORLD')
 
 #---- Sorting ----
 
-steptodo('SORTING KEYS...')
+progress('SORTING KEYS')
 
 worldDict = sortDictPriority(worldDict, [ #sort the properties alphabetically with priorities
 	['GENERAL','META'],
@@ -123,22 +142,22 @@ def sortScreens(screens:dict, tileM:int):
 		tileLiquid = sortTiles(screen,'tl_',tileM)
 		sortScreenProps(screen,props,tileMain,tileBack,tileFront,tileLiquid)
 
-steptodo('SORTING SCREENS...')
+progress('SORTING SCREENS')
 
 sortScreens(worldDict['SCREENS'], tileMode)
 
 if colMode != 0: #if not raw mode
 
-	steptodo('TRANSLATING PALETTES...')
+	progress('TRANSLATING PALETTES')
 
 	for r,room in enumerate(worldDict["ROOMS"]): #go thru each room...
 		for p,pal in enumerate(room["PALETTES"]): #each palette...
 			for c,col in enumerate(pal[2:]): #each color...
-				worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(col) #and convert
+				worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(int(col)) #and convert
 
-steptodo('SAVING WORLD...')
+progress('SAVING WORLD')
 
 writeJson(worldFileOut, worldDict) #write to the json file
 
-steptodo('WORLD IMPORTED!')
-input('Press Enter to continue...')
+progress('WORLD IMPORTED!',True)
+pE2C()

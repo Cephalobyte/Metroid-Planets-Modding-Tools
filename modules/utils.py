@@ -1,4 +1,16 @@
+try:
+	from prompt_toolkit import prompt
+	from prompt_toolkit.completion import WordCompleter
+	isPtk = True #prompt_toolkit is installed
+except:
+	isPtk = False #prompt_toolkit is not installed
+	for wrn in ['Autocompletion features not available',
+							'Refer to the README.md',
+							'Normal execution should still work']:
+		print('/!\\'+f' {wrn} '.center(54,'_')+'/!\\')
+
 NAN = float('nan')
+
 #============ Input Dialog ============
 from os import path as osp
 
@@ -6,11 +18,21 @@ def steptodo(step:str, newLine:bool=False):
 	if newLine : print('')
 	print(f' {step} '.center(60,'='))
 
+def progress(step:str, done=False):
+	if not done: step += '...'
+	print(f' {step} '.center(60,'▒'))
+
 def protip(tip:str):
 	print('(i) '+tip)
 
-def woops(err:str):
-	print('/!\\'+f' {err} '.center(54,'_')+'/!\\')
+def optiontip(id, tip:str, margin:int=3):
+	print(str(id).rjust(margin)+' : '+tip)
+
+def woops(wrn:str):
+	print('/!\\'+f' {wrn} '.center(54,'_')+'/!\\')
+
+def pE2C():
+	input('Press Enter to continue...')
 
 def getFilesDialog(fileTypeIn:str, fileTypeOut:str) ->tuple:
 	extIn = '.'+fileTypeIn
@@ -40,11 +62,6 @@ def getFilesDialog(fileTypeIn:str, fileTypeOut:str) ->tuple:
 	if not fileOut: fileOut = fileIn[:-len(extIn)] #replace with fileIn if empty string
 	if not fileOut.endswith(extOut): fileOut += extOut #add extension if missing
 
-	# fIPath = osp.abspath(fileIn)
-	# fOPath = osp.abspath(fileOut)
-	# print(osp.dirname(fIPath))
-	# print(osp.dirname(fOPath))
-	# keepdir = input('Keep input file\'s directory? (y/n): ')
 	return fileIn, fileOut
 
 def getTweaksDialog(curName:str='', curID:float=NAN) ->tuple:
@@ -62,7 +79,13 @@ def getTweaksDialog(curName:str='', curID:float=NAN) ->tuple:
 
 	return newName, newID
 
-def getYesNoDialog(question:str='', tips:list=[], defau:bool|None=None) ->bool|None:
+def getYesNoDialog(question:str, tips:list=[], defau:bool|None=None) ->bool:
+	"""
+get a boolean from yes or no dialog option
+:param question: The question to ask
+:param tips: Optional list of strings to provide details
+:param defaut: Optional default value (bool). If set to None, will ask the question again if the user doesn't type a string starting with "y" or "n" (ignore case)
+	"""
 	def readYN(yn:str):
 		if yn.casefold().startswith('y'): return True
 		elif yn.casefold().startswith('n'): return False
@@ -81,10 +104,54 @@ def getYesNoDialog(question:str='', tips:list=[], defau:bool|None=None) ->bool|N
 	
 	return answer
 
+def getOptionDialog(question:str, options:list[str], others:dict[str,str]={}, defau:bool|None=None) ->str|int:
+	"""
+get an integer or other value from a list of choices
+:param question: The question to ask
+:param options: List of strings that detail the choices (in order)
+:param others: Optional dictionary of string keys that detail additional options
+:param defau: Optional default value (bool). If set to None, will ask the question again if the user doesn't type a given option
+	"""
+
+	def readOpt():
+		if isPtk and not not others: opt = prompt(completer=WordCompleter(others))
+		else: opt=input()
+		other = [k for k in others.keys() if opt.casefold() == k.casefold()]
+		if len(other) > 0: return other[0]
+		elif opt.isdigit(): return int(opt)
+		elif not opt: return defau #if question is skipped, set default answer
+		else: return None #if invalid
+
+	steptodo(question,True)
+	if len(others) > 0: mrgn = max([len(max(others.keys(),key=len)), 3])
+	else: mrgn = 3
+	for i, tip in enumerate(options): optiontip(i, tip, mrgn)
+	for i, tip in others.items(): optiontip(i, tip, mrgn)
+
+	answer = readOpt()
+	while answer is None: #if the answer is still invalid, ask again
+		woops("I'll need you to type one of the given option")
+		steptodo(question)
+		answer = readOpt()
+
+	return answer
+
 #============ File Management ============
 import json
 import zlib
 import base64
+import os
+
+def listFiles(dir:str, ext:str) ->list[str]:
+	"""
+returns every file in the specified directory
+filtered by its extension 
+	"""
+	fileList = []
+	for de in os.scandir(dir):
+		if de.is_file() and de.name.endswith(ext): #if is a file and ends with the extension
+			fileList.append(de[-len(ext):])
+	return fileList
 
 #------ Importing ------
 
@@ -146,7 +213,7 @@ def sortDictPriority(dict1: dict, prior: list=[]):
 orders dictionary by key in case-insensitive 
 alphabetic order. It will sort every key from
 the first row of _prior_, then the second, etc.
-prior (2D list) example :
+:param prior: (2D list) example :
 [
 	['x', 'y'],
 	['width'],

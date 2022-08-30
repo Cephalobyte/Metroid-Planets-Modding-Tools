@@ -1,4 +1,4 @@
-from utils import *
+from modules.utils import *
 
 worldFileIn, worldFileOut = getFilesDialog('json','world')
 
@@ -6,14 +6,14 @@ worldDict = openJson(worldFileIn)
 
 newName, newId = getTweaksDialog(worldDict["META"]["name"], worldDict["META"]["id"])
 
-steptodo('TWEAKING...')
+progress('TWEAKING')
 
 try: worldDict["META"]["name"] = newName
 except: woops("Couldn't rename the world")
 try: worldDict["META"]["id"] = newId
 except: woops("Couldn't tweak world Id")
 
-steptodo('TRANSLATING TILES...')
+progress('TRANSLATING TILES')
 
 for screen in worldDict["SCREENS"]:
 	if isinstance(screen, float): continue #if screen is "disabled"
@@ -27,7 +27,7 @@ for screen in worldDict["SCREENS"]:
 			protip('Raw tile values')
 			break
 
-steptodo('TRANSLATING PALETTES...')
+progress('TRANSLATING PALETTES')
 
 for r,room in enumerate(worldDict["ROOMS"]):
 	for p,pal in enumerate(room["PALETTES"]):
@@ -35,10 +35,10 @@ for r,room in enumerate(worldDict["ROOMS"]):
 			if isinstance(col, str): worldDict["ROOMS"][r]["PALETTES"][p][c+2] = hexc2Gmdecc(col)
 			else: break
 
-steptodo('EXPORTING WORLD...')
+progress('EXPORTING WORLD')
 
 writeWorld(worldFileOut, worldDict)
-writeJson(worldFileOut+'_exp.json', worldDict)
+# writeJson(worldFileOut+'_exp.json', worldDict)
 
-steptodo('WORLD EXPORTED!')
-input('Press Enter to continue...')
+progress('WORLD EXPORTED!',True)
+pE2C()
