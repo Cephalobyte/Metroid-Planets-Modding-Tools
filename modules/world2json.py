@@ -1,4 +1,5 @@
-from modules.utils import *
+try: from modules.utils import *
+except: from utils import *
 
 worldFileIn, worldFileOut = getFilesDialog('world','json')
 
@@ -11,30 +12,8 @@ tileMode = getOptionDialog(#choose tile display mode
 		'binary mode - (default) return the binary equivalent separated each 4 characters <string>',
 		'simple mode - return a simplified representation of values (not recommended as it is incomplete) <string>.\n      The 4 numbers for tile numbers are : Id, Palette Id, Animated Palette Offset, Transform\n    The 4 numbers for liquid numbers are : Id, Unknown Number, Liquid Set Id, Transform',
 	],
-	{},
-	1
+	defau=1
 )
-# if getYesNoDialog( #choose tile display mode
-# 	'Translate tile numbers to binary?',
-# 	[
-# 		'String with a space each 4 char',
-# 		'(Default option when skipping)',
-# 		'Enter n to see other choices'
-# 	],
-# 	True #default
-# ): tileMode = 1 #binary mode
-# elif getYesNoDialog(
-# 	'Translate tile numbers to a simplified list?',
-# 	[
-# 		'Tiles are separated as such:',
-# 		'  Id Palette Offset Transform',
-# 		'Liquids are separated as such:',
-# 		'  ID ? Set Transform',
-# 		'Enter n or skip to keep original number'
-# 	],
-# 	False #default
-# ): tileMode = 2 #simple mode
-# else: tileMode = 0 #raw mode
 
 colMode = getOptionDialog(
 	'Choose palette color display mode',
@@ -42,20 +21,8 @@ colMode = getOptionDialog(
 		'raw mode - return the original number <int>',
 		'hexadecimal mode - (default) return the hex color code equivalent <string>'
 	],
-	{},
-	1
+	defau=1
 )
-# if getYesNoDialog( #get palette color display mode
-# 	'Translate palette color values to hexadecimal?',
-# 	[
-# 		'String with hex values ("bcbcbc")',
-# 		'(Default option when skipping)',
-# 		'Enter n to keep raw number'
-# 	],
-# 	True #default
-# ):
-# 	colMode = 1 #hexadecimal mode
-# else: colMode = 0 #raw mode
 
 progress('IMPORTING WORLD')
 
@@ -142,11 +109,40 @@ def sortScreens(screens:dict, tileM:int):
 		tileLiquid = sortTiles(screen,'tl_',tileM)
 		sortScreenProps(screen,props,tileMain,tileBack,tileFront,tileLiquid)
 
+def prevScreens(screens:dict, width:int, height:int):#░▒▓█
+	msg1 = ['' for h in range(height)]
+	msg2 = ['' for h in range(height)]
+	msg3 = ['' for h in range(height)]
+
+	for i, screen in enumerate(screens):
+		col = i%width
+		row = i//width
+		if isinstance(screen, float):
+			msg1[row] += '      '
+			msg2[row] += ' '+ str(col).center(4,' ') +' '
+			# msg2[row] += '      '
+			msg3[row] += '      '
+			continue
+		scl = '██'
+		scu = '██'
+		scr = '██'
+		scd = '██'
+		msg1[row] += f'██{scu}██'
+		# msg2[row] += '█'+ str(col).center(4,' ') +'█'
+		msg2[row] += f'{scl}  {scr}'
+		msg3[row] += f'██{scd}██'
+	
+	print(i,width,i%width,col)
+	for i in range(len(msg1)):
+		print(msg1[i])
+		print(msg2[i])
+		print(msg3[i])
+
 progress('SORTING SCREENS')
 
 sortScreens(worldDict['SCREENS'], tileMode)
 
-if colMode != 0: #if not raw mode
+if colMode > 0: #if not raw mode
 
 	progress('TRANSLATING PALETTES')
 
@@ -160,4 +156,8 @@ progress('SAVING WORLD')
 writeJson(worldFileOut, worldDict) #write to the json file
 
 progress('WORLD IMPORTED!',True)
+
+if getYesNoDialog('Preview the world?', defau=True):
+	prevScreens(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]))
+
 pE2C()

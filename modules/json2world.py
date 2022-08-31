@@ -1,4 +1,5 @@
-from modules.utils import *
+try: from modules.utils import *
+except: from utils import *
 
 worldFileIn, worldFileOut = getFilesDialog('json','world')
 

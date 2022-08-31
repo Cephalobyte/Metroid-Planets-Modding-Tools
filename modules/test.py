@@ -40,11 +40,11 @@ from utils import *
 # print(bin1)
 # print(bin2dec(bin1))
 
-import prompt_toolkit
-from prompt_toolkit import prompt
-from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+# import prompt_toolkit
+# from prompt_toolkit import prompt
+# from prompt_toolkit import PromptSession
+# from prompt_toolkit.completion import WordCompleter
+# from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 	
 # prompt('What is your name: ')
 
@@ -58,6 +58,13 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 # random_completer = WordCompleter([f'apple{i}' for i in [(j,f'_banan{j}')[j > 4] for j in range(10)]])
 # html_completer = WordCompleter(['<html>', '<body>', '<head>', '<title>'])
 # prompt('Enter HTML: ', completer=random_completer)
-
+# msg = ''
+# for i in range(20):
+# 	# msg += str(i)
+# 	msg += ' '
+# 	for j in range(9):
+# 		msg += str(j+1)
+# print(msg)
+print(['' for h in range(15)],'#')
 
 pE2C()
