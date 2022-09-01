@@ -81,7 +81,7 @@ from utils import *
 	# print(num2alph(i))
 	# num2alph(i)
 
-if 1 == 1.0:
-	print("yes")
+# str1 = 'Hello World!'
+# print(replaceAtIndex(str1, 'WOW', 14))
 
 pE2C()

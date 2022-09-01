@@ -17,6 +17,12 @@
 # ██■■██
 # ▐▌  ▐▌
 # ██■■██
+try: from modules.utils import *
+except: from utils import *
+
+worldFileIn, prevFileOut = getFilesDialog('world','prevMM.txt')
+
+worldDict = openWorld(worldFileIn)
 
 def getMMWallChar(n:int, doors:list, pos:int=1):
 	match n:
@@ -29,23 +35,15 @@ def getMMWallChar(n:int, doors:list, pos:int=1):
 					case 4: return '__'
 			return '██'				#closed
 		case 1: return '  ' #open
-		case 2:							#secret
+		case 2:							#secret wall
 			match pos:
 				case 1: return ' ▀'
 				case 2: return ' ▀'
 				case 3: return '▄ '
 				case 4: return '▄ '
-		case 3: return '░░'	#dunno
+		case 3: return '░░'	#secret passage
 
 def getMMCornerChar(scl:str, scu:str, scr:str, scd:str):
-	# clu = ('██','░░')[scl.isspace() and scu.isspace()]
-	# cru = ('██','░░')[scr.isspace() and scu.isspace()]
-	# crd = ('██','░░')[scr.isspace() and scd.isspace()]
-	# cld = ('██','░░')[scl.isspace() and scd.isspace()]
-	# clu = ('██','─┘')[scl.isspace() and scu.isspace()]
-	# cru = ('██','└─')[scr.isspace() and scu.isspace()]
-	# crd = ('██','┌─')[scr.isspace() and scd.isspace()]
-	# cld = ('██','─┐')[scl.isspace() and scd.isspace()]
 	clu = ('██',' ▄')[scl.isspace() and scu.isspace()]
 	cru = ('██','▄ ')[scr.isspace() and scu.isspace()]
 	crd = ('██','▀ ')[scr.isspace() and scd.isspace()]
@@ -65,13 +63,30 @@ def getMMMiddleChar(eln:int, itn:int):
 
 import re
 
-def cleanMM(mRs1:list[str], mRs2:list[str], mRs3:list[str]):
+def cleanMM(mRs1:list[str], mRs2:list[str], mRs3:list[str], elevs:list):
+	elevPairs = []
+	for i, e1 in enumerate(elevs):
+		# print(ei, e1)
+		for e2 in elevs[i+1:]:
+			# print('\t',e2)
+			if e1["screen_x"] == e2["screen_x"] and e1["dir"] != e2["dir"]:
+				elevPairs.append([e1,e2])
+				break
+
+	print(elevPairs,'\n')
+
 	for r in range(len(mRs1)):
+		for pair in elevPairs:
+			if min([e["screen_y"] for e in pair]) < r and r < max([e["screen_y"] for e in pair]):
+				c = int(pair[0]["screen_x"] * 6) #column
+				if mRs1[r][c:c+6] == '┌────┐':
+					mRs1[r] = replaceAtIndex(mRs1[r],'┌╫──╫┐',c)
+					mRs3[r] = replaceAtIndex(mRs3[r],'└╫──╫┘',c)
+		
 		mRs1[r] = re.sub('(?<=[^\s]{2}) ▄|▄ (?=[^\s]{2})', '██', mRs1[r], 0, re.MULTILINE).replace('▄  ▄','    ')
 		mRs3[r] = re.sub('(?<=[^\s]{2}) ▀|▀ (?=[^\s]{2})', '██', mRs3[r], 0, re.MULTILINE).replace('▀  ▀','    ')
 		
-		# print([m.start() for m in re.finditer(' ▀▀ ', mR1)])
-	# return mRs1, mRs2, mRs3
+		elevs += [m.start() for m in re.finditer(' ▀▀ ', mRs2[r])]
 
 def prevMinimap(screens:dict, width:int, height:int, elevsDict:dict=None, itemsDict:dict=None):
 	mRs1 = ['' for h in range(height)] #map rows 1
@@ -103,9 +118,22 @@ def prevMinimap(screens:dict, width:int, height:int, elevsDict:dict=None, itemsD
 		mRs2[row] += scl+mid+scr
 		mRs3[row] += cld+scd+crd
 	
-	cleanMM(mRs1, mRs2, mRs3)
+	cleanMM(mRs1, mRs2, mRs3, elevsDict)
 	
+	rslt=''
 	for i in range(len(mRs1)):
-		print(mRs1[i])
-		print(mRs2[i])
-		print(mRs3[i])
+		rslt += mRs1[i]+'\n'+mRs2[i]+'\n'+mRs3[i]+'\n'
+	
+	return rslt
+
+preview = prevMinimap(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]), worldDict["ELEVATORS"], worldDict["ITEMS"])
+print(preview)
+
+if getYesNoDialog(
+	'Save to text file?',
+	['Will be saved as :\n'+prevFileOut],
+	False
+):
+	writeTxt(prevFileOut, preview)
+
+pE2C()

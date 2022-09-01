@@ -11,6 +11,9 @@ except:
 
 NAN = float('nan')
 
+def replaceAtIndex(s:str, rep:str, at:int) ->str:
+	return s[:at].ljust(at) + rep + s[at+len(rep):]
+
 #============ Input Dialog ============
 from os import path as osp
 
@@ -35,11 +38,12 @@ def pE2C():
 	input('Press Enter to continue...')
 
 def getFilesDialog(fileTypeIn:str, fileTypeOut:str) ->tuple:
-	extIn = '.'+fileTypeIn
-	extOut = '.'+fileTypeOut
-	
 	steptodo(f'Drag & drop the {fileTypeIn} file to convert')
-
+	
+	extIn = '.'+fileTypeIn
+	# if isinstance(fileTypeIn, str): extIn = '.'+fileTypeIn
+	# else: extIn = None
+	extOut = '.'+fileTypeOut
 	fileIn = ''
 	invalidpath = True
 
@@ -49,10 +53,10 @@ def getFilesDialog(fileTypeIn:str, fileTypeOut:str) ->tuple:
 
 		if osp.exists(fileIn): invalidpath = False #if valid
 		else: #if invalid
-			print('')
+			print('\n'+fileIn)
 			woops("Hmm, I can't find that file. Try again")
 			protip("Maybe it's the wrong extension?")
-			print('I searched for :',fileIn)
+			# print('I searched for :',fileIn)
 
 	steptodo(f'Enter the name/path of the new {fileTypeOut} file', True)
 	protip('Leave empty to match input file')
@@ -179,15 +183,17 @@ def openSave(path:str) ->dict:
 
 def writeJson(path:str, obj:dict, ind:int=4):
 	with open(path, 'wt') as file:
-		temp = json.dumps(obj, indent=ind)
-		file.write(temp) #write formatted json string into new text file
+		file.write(json.dumps(obj, indent=ind)) #write formatted json string into new text file
 
 #------ Exporting ------
 
 def openJson(path:str) ->dict:
 	with open(path) as file:
-		content = file.read() #store file content in string
-		return json.loads(content)
+		return json.loads(file.read()) #store file content in string
+
+def writeTxt(path:str, text:str):
+	with open(path, 'wb') as file:
+		file.write(text.encode()) #write formatted json string into new text file
 
 def writeWorld(path:str, obj:dict):
 	worldb64 = json.dumps(obj)
