@@ -101,42 +101,13 @@ def sortScreenProps(screen:dict,props:dict,tileMain:dict,tileBack:dict,tileFront
 
 def sortScreens(screens:dict, tileM:int):
 	for screen in screens:
-		if isinstance(screen, float): continue
+		if isinstance(screen, (float, int)): continue
 		props = dict([(p,screen[p]) for p in screen if p[:3] not in ['tm_','tb_','tf_','tl_']])
 		tileMain = sortTiles(screen,'tm_',tileM)
 		tileBack = sortTiles(screen,'tb_',tileM)
 		tileFront = sortTiles(screen,'tf_',tileM)
 		tileLiquid = sortTiles(screen,'tl_',tileM)
 		sortScreenProps(screen,props,tileMain,tileBack,tileFront,tileLiquid)
-
-def prevScreens(screens:dict, width:int, height:int):#░▒▓█
-	msg1 = ['' for h in range(height)]
-	msg2 = ['' for h in range(height)]
-	msg3 = ['' for h in range(height)]
-
-	for i, screen in enumerate(screens):
-		col = i%width
-		row = i//width
-		if isinstance(screen, float):
-			msg1[row] += '      '
-			msg2[row] += ' '+ str(col).center(4,' ') +' '
-			# msg2[row] += '      '
-			msg3[row] += '      '
-			continue
-		scl = '██'
-		scu = '██'
-		scr = '██'
-		scd = '██'
-		msg1[row] += f'██{scu}██'
-		# msg2[row] += '█'+ str(col).center(4,' ') +'█'
-		msg2[row] += f'{scl}  {scr}'
-		msg3[row] += f'██{scd}██'
-	
-	print(i,width,i%width,col)
-	for i in range(len(msg1)):
-		print(msg1[i])
-		print(msg2[i])
-		print(msg3[i])
 
 progress('SORTING SCREENS')
 
@@ -158,6 +129,11 @@ writeJson(worldFileOut, worldDict) #write to the json file
 progress('WORLD IMPORTED!',True)
 
 if getYesNoDialog('Preview the world?', defau=True):
-	prevScreens(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]))
+	try: from modules.previewGenerator import prevMinimap
+	except: from previewGenerator import prevMinimap
+	prevMinimap(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]), worldDict["ELEVATORS"], worldDict["ITEMS"])
 
+	# if getYesNoDialog('Save to text file?', defau=False):
+	# 	''
+	# 	with open(worldFileOut.removesuffix('.json'))
 pE2C()

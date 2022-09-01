@@ -65,6 +65,23 @@ from utils import *
 # 	for j in range(9):
 # 		msg += str(j+1)
 # print(msg)
-print(['' for h in range(15)],'#')
+
+# def num2alph(n:int, maj:bool=True):
+# 	asciibase = (97, 65)[maj]
+# 	ltr1num = n%26
+# 	ltr2num = ((n//26-1)%26,' ')[n//26<1]
+# 	ltr3num = ((n//26//26)%26,' ')[n//27//26<1]
+# 	ltr1 = chr(asciibase+n%26)
+
+# 	print(n,ltr3num,ltr2num,ltr1num)
+	# ltr2 = (chr(),)
+	# return chr(asciibase+ltr2)+chr(asciibase+ltr1)
+
+# for i in range(26**2+27):
+	# print(num2alph(i))
+	# num2alph(i)
+
+if 1 == 1.0:
+	print("yes")
 
 pE2C()
