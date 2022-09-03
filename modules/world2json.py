@@ -1,11 +1,11 @@
 try: from modules.utils import *
 except: from utils import *
 
-worldFileIn, worldFileOut = getFilesDialog('world','json')
+worldFileIn, worldFileOut = getInOutFileDialog('world','json')
 
 worldDict = openWorld(worldFileIn)
 
-tileMode = getOptionDialog(#choose tile display mode
+tileMode = getOptionDialog(	#choose tile display mode
 	'Choose tile number display mode',
 	[
 		'raw mode - return the original number <float>',
@@ -24,11 +24,11 @@ colMode = getOptionDialog(
 	defau=1
 )
 
-progress('IMPORTING WORLD')
+progress('IMPORTING WORLD')	#---------------------------------------------------
 
-#---- Sorting ----
+#------ Sorting ----------------------------------------------------------------
 
-progress('SORTING KEYS')
+progress('SORTING KEYS')	#-----------------------------------------------------
 
 worldDict = sortDictPriority(worldDict, [	#sort the properties alphabetically with priorities
 	['GENERAL','META'],
@@ -56,7 +56,7 @@ for data in [
 		stuff.clear()
 		stuff.update(sortDictPriority(stuf2, data[1]))
 
-#---- Sort & Readability ----
+#------ Sort & Readability -----------------------------------------------------
 
 def sortScreenProps(screen:dict,props:dict,tileMain:dict,tileBack:dict,tileFront:dict,tileLiquid:dict):
 	screen.clear()
@@ -99,17 +99,27 @@ def sortScreenProps(screen:dict,props:dict,tileMain:dict,tileBack:dict,tileFront
 	screen.update(tileFront)
 	screen.update(tileLiquid)
 
+
 def sortScreens(screens:dict, tileM:int):
 	for screen in screens:
-		if isinstance(screen, (float, int)): continue
+
+		if isinstance(screen, (float, int)): continue	#if screen is "disabled", ignore
+
 		props = dict([(p,screen[p]) for p in screen if p[:3] not in ['tm_','tb_','tf_','tl_']])
 		tileMain = sortTiles(screen,'tm_',tileM)
 		tileBack = sortTiles(screen,'tb_',tileM)
 		tileFront = sortTiles(screen,'tf_',tileM)
 		tileLiquid = sortTiles(screen,'tl_',tileM)
-		sortScreenProps(screen,props,tileMain,tileBack,tileFront,tileLiquid)
+		sortScreenProps(
+			screen,
+			props,
+			tileMain,
+			tileBack,
+			tileFront,
+			tileLiquid
+		)
 
-progress('SORTING SCREENS')
+progress('SORTING SCREENS')	#---------------------------------------------------
 
 sortScreens(worldDict['SCREENS'], tileMode)
 
@@ -117,21 +127,31 @@ if colMode > 0:	#if not raw mode
 
 	progress('TRANSLATING PALETTES')
 
-	for r,room in enumerate(worldDict["ROOMS"]):	#go thru each room...
-		for p,pal in enumerate(room["PALETTES"]):	#each palette...
-			for c,col in enumerate(pal[2:]):	#each color...
+	for r,room in enumerate(worldDict["ROOMS"]):	#go through each room...
+		for p,pal in enumerate(room["PALETTES"]):		#each palette...
+			for c,col in enumerate(pal[2:]):					#each color...
 				worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(int(col))	#and convert
 
-progress('SAVING WORLD')
+progress('SAVING WORLD')	#-----------------------------------------------------
 
 writeJson(worldFileOut, worldDict)	#write to the json file
 
-progress('WORLD IMPORTED!',True)
+progress('WORLD IMPORTED!',True)	#---------------------------------------------
 
 if getYesNoDialog('Preview the world?', defau=True):
+
 	try: from modules.previewGenerator import prevMinimap
 	except: from previewGenerator import prevMinimap
-	preview = prevMinimap(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]), worldDict["ELEVATORS"], worldDict["ITEMS"], worldDict["GENERAL"]["spawns"])
+
+	preview = prevMinimap(
+		worldDict["SCREENS"],
+		int(worldDict["GENERAL"]["world_w"]),
+		int(worldDict["GENERAL"]["world_h"]),
+		worldDict["ELEVATORS"],
+		worldDict["ITEMS"],
+		worldDict["GENERAL"]["spawns"]
+	)
+	
 	print(preview)
 
 	prevFileOut = worldFileIn.removesuffix('world') + 'prevMM.txt'
@@ -141,10 +161,10 @@ if getYesNoDialog('Preview the world?', defau=True):
 		False
 	):
 
-		progress('SAVING MINIMAP')
+		progress('SAVING MINIMAP')	#-----------------------------------------------
 
 		writeTxt(prevFileOut, preview)
 
-		progress('PREVIEW SAVED!',True)
+		progress('PREVIEW SAVED!',True)	#-------------------------------------------
 
 pE2C()

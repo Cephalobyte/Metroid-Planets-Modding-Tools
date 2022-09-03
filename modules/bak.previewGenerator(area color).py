@@ -10,7 +10,7 @@
 # ◄▲►▼
 # ←↑→↓↕↨↔
 # •◘○◙■
-#  ░▒▓█
+
 # █▀▀▀▀█
 # █    █
 # █▄▄▄▄█
@@ -21,7 +21,20 @@
 # ▐▌  ▐▌
 # ██■■██
 
-AREACHARLIST = ['XX','██','█▓','▓▒','▓▓','▒▒','░░','▒░']
+#  ░▒▓█
+# Area color testing
+
+#  None  Crat  Brin  Norf
+
+# XXXXXX███████▓█▓█▓▓▒▓▒▓▒
+# XX  XX██  ███▓  █▓▓▒  ▓▒
+# XXXXXX███████▓█▓█▓▓▒▓▒▓▒
+
+# Kraid Ridley Tour  WrSh
+
+# ▓▓▓▓▓▓▒▒▒▒▒▒░░░░░░▒░▒░▒░
+# ▓▓  ▓▓▒▒  ▒▒░░  ░░▒░  ▒░
+# ▓▓▓▓▓▓▒▒▒▒▒▒░░░░░░▒░▒░▒░
 
 try: from modules.utils import *
 except: from utils import *
@@ -107,7 +120,7 @@ def getMMMiddleChar(eln:int, itn:int):
 		return mid
 
 #clean Minimap
-def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], elevs:list=[], spwns:list=[], areachar:str='██'):
+def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], r:int, areachar:str='██', elevs:list=[], spwns:list=[]):
 	elevPairs = []
 	for i, e1 in enumerate(elevs):
 		for e2 in elevs[i+1:]:
@@ -117,46 +130,47 @@ def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], elevs:list=[], spwns
 	
 	eleValid = sum(elevPairs, [])	#valid elevators list
 
-	for r in range(len(mmr1)):	#row
+	# for r in range(len(mmr1)):	#row
 
-		for pair in elevPairs:
-			if min([e["screen_y"] for e in pair]) < r and r < max([e["screen_y"] for e in pair]):
-				c = int(pair[0]["screen_x"] * 6)	#column
-				if mmr1[r][c:c+6] == '┌────┐':
-					mmr1[r] = replaceAtIndex(mmr1[r],'╫──╫',c+1)	#generate elevator rails
-					mmr3[r] = replaceAtIndex(mmr3[r],'╫──╫',c+1)
-		
-		for spwn in [	#go through every spawn of this row
-			s for s in spwns
-			if s["screen_y"] == r
-		]:
-			c = int(spwn["screen_x"])	#column
-
-			if len([	#if there's a valid elevator at the same location,
-				e for e in eleValid
-				if e["screen_x"] == c
-				and e["screen_y"] == r
-			]) > 0: continue	#skip
-
-			mmr2[r] = replaceAtIndex(mmr2[r], '§', c*6+2)	#replace with spawn symbol
+	for pair in elevPairs:
+		if min([e["screen_y"] for e in pair]) < r and r < max([e["screen_y"] for e in pair]):
+			c = int(pair[0]["screen_x"] * 6)	#column
+			print(mmr1[r][c:c+6])
+			if mmr1[r][c:c+6] == '┌────┐':
+				mmr1[r] = replaceAtIndex(mmr1[r],'╫──╫',c+1)	#generate elevator rails
+				mmr3[r] = replaceAtIndex(mmr3[r],'╫──╫',c+1)
 	
-		for elev in [	#go through the last elevator
-			e for e in elevs[-1:]
-			if e["screen_y"] == r
-		]:
-			c = int(elev["screen_x"] * 6)	#column * block width
+	# for spwn in [	#go through every spawn of this row
+	# 	s for s in spwns
+	# 	if s["screen_y"] == r
+	# ]:
+	# 	c = int(spwn["screen_x"])	#column
 
-			mmr2[r] = replaceAtIndex(mmr2[r],'◘',c+2)	#replace with end symbol
-		
-		mmr1[r] = re.sub(
-			'(?<=[^\s]{2}) ▄|▄ (?=[^\s]{2})', areachar, mmr1[r]	#clean corners
-		).replace('▄  ▄','    ')															#clean large rooms
-		mmr3[r] = re.sub(
-			'(?<=[^\s]{2}) ▀|▀ (?=[^\s]{2})', areachar, mmr3[r]
-		).replace('▀  ▀','    ')
+	# 	if len([	#if there's a valid elevator at the same location,
+	# 		e for e in eleValid
+	# 		if e["screen_x"] == c
+	# 		and e["screen_y"] == r
+	# 	]) > 0: continue	#skip
+
+	# 	mmr2[r] = replaceAtIndex(mmr2[r], '§', c*6+2)	#replace with spawn symbol
+	
+	# for elev in [	#go through the last elevator
+	# 	e for e in elevs[-1:]
+	# 	if e["screen_y"] == r
+	# ]:
+	# 	c = int(elev["screen_x"] * 6)	#column * block width
+
+	# 	mmr2[r] = replaceAtIndex(mmr2[r],'◘',c+2)	#replace with end symbol
+	
+	mmr1[r] = re.sub(
+		'(?<=[^\s]{2}) ▄|▄ (?=[^\s]{2})', areachar, mmr1[r]	#clean corners
+	).replace('▄  ▄','    ')															#clean large rooms
+	mmr3[r] = re.sub(
+		'(?<=[^\s]{2}) ▀|▀ (?=[^\s]{2})', areachar, mmr3[r]
+	).replace('▀  ▀','    ')
 
 #preview Minimap
-def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], itemsList:list[dict]=[], spwnsList:list[dict]=[]):
+def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], itemsList:list[dict]=[], spwnsList:list[dict]=[], areacharList:list[str]=['XX','██','█▓','▓▒','▓▓','▒▒','░░','▒░']):
 	mmr1 = ['' for h in range(height)]	#minimap rows 1
 	mmr2 = ['' for h in range(height)]	#minimap rows 2
 	mmr3 = ['' for h in range(height)]	#minimap rows 3
@@ -169,28 +183,27 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 		
 		if isinstance(screen, (float, int)):	#if empty screen
 			mmr1[row] += '┌────┐'
-			mmr2[row] += f'{col} {col}'.center(6,' ')
+			mmr2[row] += f'{col} {row}'.center(6,' ')
 			mmr3[row] += '└────┘'
 			continue
+		
+		areachar = areacharList[int(screen["area"]) % len(areacharList)] #area "color"
+		doors = [[int(d["pos"]), d["color"]] for d in screen["DOORS"]] #retrieve door position & color
+		elevs = [e["dir"] for e in elevsList if e["screen_x"]==col and e["screen_y"]==row]	#retrieve elevator direction
+		items = [i["item"] for i in itemsList if i["screen_x"]==col and i["screen_y"]==row]	#retrieve item item (laugh)
 
-		doors = [[int(d["pos"]),d["color"]] for d in screen["DOORS"]]
-		elevs = [e["dir"] for e in elevsList if e["screen_x"]==col and e["screen_y"]==row]
-		items = [i["item"] for i in itemsList if i["screen_x"]==col and i["screen_y"]==row]
-
-		scr = getMMWallChar(screen["scroll_r"],doors,1)	#scrolls (sides)
-		scu = getMMWallChar(screen["scroll_u"],doors,2)
-		scl = getMMWallChar(screen["scroll_l"],doors,3)
-		scd = getMMWallChar(screen["scroll_d"],doors,4)
-		cru, clu, cld, crd = getMMCornerChar(scr, scu, scl, scd)	#corners
+		scr = getMMWallChar(screen["scroll_r"], doors, 1, areachar)	#scrolls (sides)
+		scu = getMMWallChar(screen["scroll_u"], doors, 2, areachar)
+		scl = getMMWallChar(screen["scroll_l"], doors, 3, areachar)
+		scd = getMMWallChar(screen["scroll_d"], doors, 4, areachar)
+		cru, clu, cld, crd = getMMCornerChar(scr, scu, scl, scd, areachar)	#corners
 		mid = getMMMiddleChar(next(iter(elevs), None), next(iter(items), None))	#middle : first elev & first item 
 
 		mmr1[row] += clu + scu + cru
 		mmr2[row] += scl + mid + scr
 		mmr3[row] += cld + scd + crd
-	
-	progress('SECOND PASS CLEAN UP')	#-------------------------------------------
 
-	cleanMM(mmr1, mmr2, mmr3, elevsList, spwnsList)#, screens)
+		cleanMM(mmr1, mmr2, mmr3, row, areachar, elevsList, spwnsList)
 	
 	progress('ADDING LEGEND')	#---------------------------------------------------
 
@@ -205,7 +218,7 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 
 	minimap = ''
 	for i in range(len(mmr1)):
-		minimap += mmr1[i]+'\n'+mmr2[i]+'\n'+mmr3[i]+'\n'
+		minimap += mmr1[i] +'\n'+ mmr2[i] +'\n'+ mmr3[i] +'\n'
 
 	progress('PREVIEW GENERATED!',True)	#-----------------------------------------
 

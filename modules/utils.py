@@ -1,43 +1,137 @@
 try:
 	from prompt_toolkit import prompt
 	from prompt_toolkit.completion import WordCompleter
+
 	isPtk = True	#prompt_toolkit is installed
 except:
 	isPtk = False	#prompt_toolkit is not installed
-	for wrn in ['Autocompletion features not available',
-							'Refer to the README.md',
-							'Normal execution should still work']:
-		print('/!\\'+f' {wrn} '.center(54,'_')+'/!\\')
+
+	print('/!\\'+' Autocompletion features not available '.center(54,'_')+'/!\\')
+	for tip in [
+		'Refer to the README.md',
+		'Normal execution should still work'
+	]:
+		print('(i) '+tip)
+
+#============ Constants ================================================================================================
 
 NAN = float('nan')
 
-def replaceAtIndex(s:str, rep:str, at:int) ->str:
-	return s[:at].ljust(at) + rep + s[at+len(rep):]
+#============ General ==================================================================================================
 
-#============ Input Dialog ============
+def replaceAtIndex(text:str, rep:str, at:int=0) ->str:
+	"""
+Replace a segment of a string :text: from a given position :at: until the given replacement's :rep: length.
+:param text: `<str>` text to be modified
+:param rep: `<str>` replacement segment
+:param at: `<int>` position from which the segment starts overwriting the text.
+	"""
+	return text[:at].ljust(at) + rep + text[at+len(rep):]
+
+#============ Input Dialog =============================================================================================
 from os import path as osp
 
+#------ Info / Debugging -------------------------------------------------------
+
 def steptodo(step:str, newLine:bool=False):
+	"""Instruct the user on what to do"""
 	if newLine : print('')
 	print(f' {step} '.center(60,'='))
 
 def progress(step:str, done=False):
+	"""Report the step progression"""
 	if not done: step += '...'
 	print(f' {step} '.center(60,'▒'))
 
 def protip(tip:str):
+	"""Print useful info"""
 	print('(i) '+tip)
 
 def optiontip(id, tip:str, margin:int=3):
+	"""Print an option with a description"""
 	print(str(id).rjust(margin)+' : '+tip)
 
 def woops(wrn:str):
+	"""Print a warning"""
 	print('/!\\'+f' {wrn} '.center(54,'_')+'/!\\')
 
 def pE2C():
+	"""'Press Enter to continue' Pauses the script until user interaction"""
 	input('Press Enter to continue...')
 
-def getFilesDialog(fileTypeIn:str|list[str]|tuple[str], fileTypeOut:str) ->tuple[str,str]:
+#------ Dialog -----------------------------------------------------------------
+
+
+def getYesNoDialog(question:str, tips:list=[], defau:bool|None=None) ->bool:
+	"""
+get a boolean from yes or no dialog option
+:param question: The question to ask
+:param tips: Optional list of strings to provide details
+:param defaut: Optional default value (bool). If set to None, will ask the question again if the user doesn't type a string starting with "y" or "n" (ignore case)
+	"""
+
+	def readYN(yn:str):
+		if yn.casefold().startswith('y'): return True
+		elif yn.casefold().startswith('n'): return False
+		elif not yn: return defau	#if question is skipped, set default answer
+		else: return None	#if invalid
+	
+	steptodo(question,True)
+	for tip in tips:
+		protip(tip)
+	answer = readYN(input('(y/n): '))
+
+	while answer is None:	#if the answer is still invalid, ask again
+		woops("I'll need you to type either y or n")
+		steptodo(question)
+		answer = readYN(input('(y/n): '))
+	
+	return answer
+
+
+def getOptionDialog(question:str, options:list[str], others:dict[str,str]={}, defau:bool|None=None) ->str|int:
+	"""
+get an integer or other value from a list of choices
+:param question: `<str>` The question to ask
+:param options: `<list[str]>` list of options detailing the choices (in order)
+:param others: `<dict[str,str]>` (Optional) Dictionary of string keys that detail additional options
+:param defau: `<bool|None>` (Optional) Default value. If set to None, will ask the question again if the user doesn't type a given option
+	"""
+
+	def readOpt():
+		if isPtk and not not others: opt = prompt(completer=WordCompleter(others))	#if prompt_toolkit is installed and has extra options, provide autocompletion
+		else: opt=input()	#else ask normally
+
+		other = [k for k in others.keys() if opt.casefold() == k.casefold()]
+
+		if len(other) > 0: return other[0] 
+		elif opt.isdigit(): return int(opt) 
+		elif not opt: return defau	#if question is skipped, set default answer
+		else: return None	#if invalid
+
+	steptodo(question,True)
+
+	if len(others) > 0: mrgn = max([len(max(others.keys(),key=len)), 3]) #if there are extra options, set margin to the maximum option length
+	else: mrgn = 3
+	for i, tip in enumerate(options): optiontip(i, tip, mrgn)
+	for i, tip in others.items(): optiontip(i, tip, mrgn)
+
+	answer = readOpt()
+
+	while answer is None:	#if the answer is still invalid, ask again
+		woops("I'll need you to type one of the given option")
+		steptodo(question)
+		answer = readOpt()
+
+	return answer
+
+#------ Specific ---------------------------------------------------------------
+
+
+def getInOutFileDialog(fileTypeIn:str|list[str], fileTypeOut:str) ->tuple[str,str]:
+	"""
+
+	"""
 	
 	if isinstance(fileTypeIn, str):	#if single file type accepted
 		steptodo(f'Drag & drop the {fileTypeIn} file')
@@ -72,7 +166,11 @@ def getFilesDialog(fileTypeIn:str|list[str]|tuple[str], fileTypeOut:str) ->tuple
 
 	return fileIn, fileOut, extIn
 
+
 def getNameIdDialog(curName:str='', curId:float=NAN) ->tuple[str,float]:
+	"""
+
+	"""
 	steptodo('Enter a new name',True)
 	if not not curName:
 		protip('current is :'+curName)
@@ -96,64 +194,7 @@ def getNameIdDialog(curName:str='', curId:float=NAN) ->tuple[str,float]:
 
 	return newName, newId
 
-def getYesNoDialog(question:str, tips:list=[], defau:bool|None=None) ->bool:
-	"""
-get a boolean from yes or no dialog option
-:param question: The question to ask
-:param tips: Optional list of strings to provide details
-:param defaut: Optional default value (bool). If set to None, will ask the question again if the user doesn't type a string starting with "y" or "n" (ignore case)
-	"""
-	def readYN(yn:str):
-		if yn.casefold().startswith('y'): return True
-		elif yn.casefold().startswith('n'): return False
-		elif not yn: return defau	#if question is skipped, set default answer
-		else: return None	#if invalid
-	
-	steptodo(question,True)
-	for tip in tips:
-		protip(tip)
-	answer = readYN(input('(y/n): '))
-
-	while answer is None:	#if the answer is still invalid, ask again
-		woops("I'll need you to type either y or n")
-		steptodo(question)
-		answer = readYN(input('(y/n): '))
-	
-	return answer
-
-def getOptionDialog(question:str, options:list[str], others:dict[str,str]={}, defau:bool|None=None) ->str|int:
-	"""
-get an integer or other value from a list of choices
-:param question: The question to ask
-:param options: List of strings that detail the choices (in order)
-:param others: Optional dictionary of string keys that detail additional options
-:param defau: Optional default value (bool). If set to None, will ask the question again if the user doesn't type a given option
-	"""
-
-	def readOpt():
-		if isPtk and not not others: opt = prompt(completer=WordCompleter(others))
-		else: opt=input()
-		other = [k for k in others.keys() if opt.casefold() == k.casefold()]
-		if len(other) > 0: return other[0]
-		elif opt.isdigit(): return int(opt)
-		elif not opt: return defau	#if question is skipped, set default answer
-		else: return None	#if invalid
-
-	steptodo(question,True)
-	if len(others) > 0: mrgn = max([len(max(others.keys(),key=len)), 3])
-	else: mrgn = 3
-	for i, tip in enumerate(options): optiontip(i, tip, mrgn)
-	for i, tip in others.items(): optiontip(i, tip, mrgn)
-
-	answer = readOpt()
-	while answer is None:	#if the answer is still invalid, ask again
-		woops("I'll need you to type one of the given option")
-		steptodo(question)
-		answer = readOpt()
-
-	return answer
-
-#============ File Management ============
+#============ File Management ==========================================================================================
 import json
 import zlib
 import base64
@@ -170,7 +211,8 @@ filtered by its extension
 			fileList.append(de[-len(ext):])
 	return fileList
 
-#------ Importing ------
+#------ Importing --------------------------------------------------------------
+
 
 def openWorld(path:str) ->dict:
 	with open(path) as file:
@@ -198,7 +240,8 @@ def writeJson(path:str, obj:dict, ind:int=4):
 	with open(path, 'wt') as file:
 		file.write(json.dumps(obj, indent=ind))	#write formatted json string into new text file
 
-#------ Exporting ------
+#------ Exporting --------------------------------------------------------------
+
 
 def openJson(path:str) ->dict:
 	with open(path) as file:
@@ -206,7 +249,7 @@ def openJson(path:str) ->dict:
 
 def writeTxt(path:str, text:str):
 	with open(path, 'wb') as file:
-		file.write(text.encode())	#write formatted json string into new text file
+		file.write(text.encode())	#write string into new text file
 
 def writeWorld(path:str, obj:dict):
 	worldb64 = json.dumps(obj)
@@ -225,29 +268,36 @@ def writeRoom(path:str, obj:dict):
 def writeSave(path:str, obj:dict):
 	writeRoom(path, obj)
 
-#============ Sorting ============
+#============ Sorting ==================================================================================================
 
-def sortDictPriority(dict1: dict, prior: list=[]):
+def sortDictPriority(dict1:dict, prior:list[str|list[str]]=[]):
 	"""
-orders dictionary by key in case-insensitive 
-alphabetic order. It will sort every key from
-the first row of _prior_, then the second, etc.
-:param prior: (2D list) example :
-[
-	['x', 'y'],
-	['width'],
-	['height'],	#height would be sorted before width otherwise
-]
+Orders dictionary by key in case-insensitive alphabetic order.
+It will sort every key from the first row of :prior:, then the second, etc.
+:param dict1: `<dict>`
+:param prior: `<list>` example:
+	[
+	  ['x', 'y'],
+	  'width',
+	  'height',
+	]
 	"""
 	items = dict1.items()
-	if len(prior)==0: return dict(sorted(items, key=lambda k:k[0].swapcase()))
+
+	if len(prior) == 0:	#if there are no priorities,
+		return dict(sorted(items, key=lambda k:k[0].swapcase()))	#sort dictionary alphabetically, ignore case
+
 	def sor(key):
 		k = key[0]
 		i = len(items)
-		for p,s in enumerate(prior):
-			if k in s: i = p
-		return (i,k.swapcase())
+
+		for pi, pn in enumerate(prior):
+			if k == pn or k in pn: i = pi	#if key is or is in the priority name/names, 
+		
+		return (i, k.swapcase())
+
 	return dict(sorted(items, key=sor))
+
 
 def sortTiles(screen:dict, prefix:str='tm_', mode:int=0):
 	"""
@@ -258,18 +308,28 @@ than 0.
 	dico = {}
 	for y in range(15):
 		for x in range(20):
+
 			name = prefix+f'{x}-{y}'
 			tile = screen.get(name)
+
 			if tile is not None:	#if there is a tile at that position
 				match mode:
-					case 0: dico[name] = tile	#raw mode
-					case 1: dico[name] = dec2bin(int(tile))	#binary mode
+					case 0:	#raw mode
+						dico[name] = tile
+						break
+					case 1:	#binary mode
+						dico[name] = dec2bin(int(tile))
 					case 2:	#simple mode
-						if prefix == 'tl_': dico[name] = unpackLiquid(int(tile))	#if liquid
-						else: dico[name] = unpackTile(int(tile))
+						if prefix == 'tl_':	#if liquid
+							dico[name] = unpackLiquidSimple(int(tile))
+						else:
+							dico[name] = unpackTileSimple(int(tile))
+		
+		else: continue
+		break
 	return dico
 
-#============ Readability ============
+#============ Readability ==============================================================================================
 import re
 
 def dec2bin(d:int):
@@ -284,7 +344,7 @@ def bin2dec(b:str):
 # 		result += str((tile % 2**bits[pos+1])//bit)
 # 	return result
 
-def unpackTile(tile: int):
+def unpackTileSimple(tile: int):
 	"""
 Takes the packed tile number and returns a
 readable string containing the tile id, palette
@@ -305,7 +365,7 @@ transform id being as follows :
 	tra = tile//268435456	#transform
 	return f"{id} {pal} {fra} {tra}"
 
-def unpackLiquid(tile: int):
+def unpackLiquidSimple(tile: int):
 	"""
 takes the packed tile number and returns a
 readable string containing the tile id offset by
@@ -326,7 +386,7 @@ set being as follows :
 	tra = tile//268435456	#transform
 	return f"{id} {typ} {set} {tra}"
 
-def packTile(tile):
+def packTileSimple(tile):
 	"""
 returns the tile number from the string, reverse
 function of unpackTile()
@@ -334,7 +394,7 @@ function of unpackTile()
 	tile = [int(float(val)) for val in tile.split()]
 	return (tile[3]*268435456)+(tile[2]*131072)+(tile[1]*4096)+tile[0]
 
-def packLiquid(tile):
+def packLiquidSimple(tile):
 	"""
 returns the tile number from the string, reverse
 function of unpackLiquid()
@@ -342,7 +402,7 @@ function of unpackLiquid()
 	tile = [int(float(val)) for val in tile.split()]
 	return (tile[3]*268435456)+(tile[2]*16384)+(tile[1]*1024)+tile[0]
 
-def gmdecc2Hexc(val):
+def gmdecc2Hexc(val):	#game maker decimal color to hexadecimal color
 	"""
 takes a gamemaker decimal color and returns a
 'readable' (shut up it's my code) hex color
@@ -350,7 +410,7 @@ takes a gamemaker decimal color and returns a
 	val = hex(val)[2:].rjust(6,'0')
 	return val[4:6]+val[2:4]+val[0:2]
 
-def hexc2Gmdecc(val):
+def hexc2Gmdecc(val):	#hexadecimal color to game maker decimal color
 	"""
 takes a hex color and returns the gamemaker
 decimal color equivalent
