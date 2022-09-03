@@ -1,9 +1,9 @@
 try:
 	from prompt_toolkit import prompt
 	from prompt_toolkit.completion import WordCompleter
-	isPtk = True #prompt_toolkit is installed
+	isPtk = True	#prompt_toolkit is installed
 except:
-	isPtk = False #prompt_toolkit is not installed
+	isPtk = False	#prompt_toolkit is not installed
 	for wrn in ['Autocompletion features not available',
 							'Refer to the README.md',
 							'Normal execution should still work']:
@@ -37,51 +37,64 @@ def woops(wrn:str):
 def pE2C():
 	input('Press Enter to continue...')
 
-def getFilesDialog(fileTypeIn:str, fileTypeOut:str) ->tuple:
-	steptodo(f'Drag & drop the {fileTypeIn} file to convert')
+def getFilesDialog(fileTypeIn:str|list[str]|tuple[str], fileTypeOut:str) ->tuple[str,str]:
 	
-	extIn = '.'+fileTypeIn
-	# if isinstance(fileTypeIn, str): extIn = '.'+fileTypeIn
-	# else: extIn = None
+	if isinstance(fileTypeIn, str):	#if single file type accepted
+		steptodo(f'Drag & drop the {fileTypeIn} file')
+		extIn = '.'+fileTypeIn
+	else:														#if multiple file types accepted
+		steptodo('Drag & drop the '+' or '.join(fileTypeIn)+' file')
+		extIn = ['.'+f for f in fileTypeIn]
 	extOut = '.'+fileTypeOut
 	fileIn = ''
 	invalidpath = True
 
 	while invalidpath:
-		fileIn = input().strip('"\'& ')
-		if not fileIn.endswith(extIn): fileIn += extIn #add extension if missing
+		fileIn = input().strip('"\'& ')	#strip drag&drop characters
+		if isinstance(fileTypeIn, str):	#if not a list
+			if not fileIn.endswith(extIn): fileIn += extIn	#add extension if missing
+		elif fileIn.endswith(tuple(extIn)): extIn = osp.splitext(fileIn)[1]	#specify which extension matches
+		else: fileIn += extIn[0]	#add first extension if missing from list
 
-		if osp.exists(fileIn): invalidpath = False #if valid
-		else: #if invalid
+		if osp.exists(fileIn): invalidpath = False	#if valid
+		else:	#if invalid
 			print('\n'+fileIn)
 			woops("Hmm, I can't find that file. Try again")
 			protip("Maybe it's the wrong extension?")
-			# print('I searched for :',fileIn)
 
 	steptodo(f'Enter the name/path of the new {fileTypeOut} file', True)
 	protip('Leave empty to match input file')
 	protip('Drag & drop also works')
 
 	fileOut = input().strip('"\'& ')
-	if not fileOut: fileOut = fileIn[:-len(extIn)] #replace with fileIn if empty string
-	if not fileOut.endswith(extOut): fileOut += extOut #add extension if missing
+	if not fileOut: fileOut = osp.splitext(fileIn)[0]	#replace with fileIn's path until extension if empty string
+	if not fileOut.endswith(extOut): fileOut += extOut	#add extension if missing
 
-	return fileIn, fileOut
+	return fileIn, fileOut, extIn
 
-def getTweaksDialog(curName:str='', curID:float=NAN) ->tuple:
+def getNameIdDialog(curName:str='', curId:float=NAN) ->tuple[str,float]:
 	steptodo('Enter a new name',True)
-	if not not curName: protip('current is :'+curName)
-	protip('Leave empty to keep it')
-	newName = input()
+	if not not curName:
+		protip('current is :'+curName)
+		protip('Leave empty to keep it')
+		if isPtk : newName = prompt(default=curName)
+	else:
+		protip('Leave empty to keep current')
+		newName = input()
 
 	steptodo('Enter a new ID',True)
-	if curID is not NAN: protip('current is :'+str(curID))
-	protip('Leave empty to keep it')
-	newID = input()
-	if not newID: newID = NAN
-	newID = float(newID)
+	if curId is not NAN:
+		protip('current is :'+str(curId))
+		protip('Leave empty to keep it')
+		if isPtk : newId = prompt(default=str(curId))
+	else:
+		protip('Leave empty to keep current')
+		newId = input()
+	
+	if not newId: newId = NAN
+	newId = float(newId)
 
-	return newName, newID
+	return newName, newId
 
 def getYesNoDialog(question:str, tips:list=[], defau:bool|None=None) ->bool:
 	"""
@@ -93,15 +106,15 @@ get a boolean from yes or no dialog option
 	def readYN(yn:str):
 		if yn.casefold().startswith('y'): return True
 		elif yn.casefold().startswith('n'): return False
-		elif not yn: return defau #if question is skipped, set default answer
-		else: return None #if invalid
+		elif not yn: return defau	#if question is skipped, set default answer
+		else: return None	#if invalid
 	
 	steptodo(question,True)
 	for tip in tips:
 		protip(tip)
 	answer = readYN(input('(y/n): '))
 
-	while answer is None: #if the answer is still invalid, ask again
+	while answer is None:	#if the answer is still invalid, ask again
 		woops("I'll need you to type either y or n")
 		steptodo(question)
 		answer = readYN(input('(y/n): '))
@@ -123,8 +136,8 @@ get an integer or other value from a list of choices
 		other = [k for k in others.keys() if opt.casefold() == k.casefold()]
 		if len(other) > 0: return other[0]
 		elif opt.isdigit(): return int(opt)
-		elif not opt: return defau #if question is skipped, set default answer
-		else: return None #if invalid
+		elif not opt: return defau	#if question is skipped, set default answer
+		else: return None	#if invalid
 
 	steptodo(question,True)
 	if len(others) > 0: mrgn = max([len(max(others.keys(),key=len)), 3])
@@ -133,7 +146,7 @@ get an integer or other value from a list of choices
 	for i, tip in others.items(): optiontip(i, tip, mrgn)
 
 	answer = readOpt()
-	while answer is None: #if the answer is still invalid, ask again
+	while answer is None:	#if the answer is still invalid, ask again
 		woops("I'll need you to type one of the given option")
 		steptodo(question)
 		answer = readOpt()
@@ -153,7 +166,7 @@ filtered by its extension
 	"""
 	fileList = []
 	for de in os.scandir(dir):
-		if de.is_file() and de.name.endswith(ext): #if is a file and ends with the extension
+		if de.is_file() and de.name.endswith(ext):	#if is a file and ends with the extension
 			fileList.append(de[-len(ext):])
 	return fileList
 
@@ -161,39 +174,39 @@ filtered by its extension
 
 def openWorld(path:str) ->dict:
 	with open(path) as file:
-		content = file.read() #store file content in string
-	worldjson = base64.b64decode(content.encode()) #get the compressed world by decoding the binary string
-	worldjson = zlib.decompress(worldjson).decode() #decompress into compact json binary string, then decode() turns binary string into string
-	worldjson = worldjson.rstrip('\x00') #removes the possible trailing NUL character
-	return json.loads(worldjson) #return json as python dictionary
+		content = file.read()	#store file content in string
+	worldjson = base64.b64decode(content.encode())	#get the compressed world by decoding the binary string
+	worldjson = zlib.decompress(worldjson).decode()	#decompress into compact json binary string, then decode() turns binary string into string
+	worldjson = worldjson.rstrip('\x00')	#removes the possible trailing NUL character
+	return json.loads(worldjson)	#return json as python dictionary
 
 def openRoom(path:str) ->dict:
 	with open(path) as file:
-		roomjson = file.read().rstrip('\x00') #store file content in string without NULL characters
-	roomjson = roomjson[1 : len(roomjson) - int(roomjson[0])] #remove "salt" by reading the first character int(roomjson[0]) then remove this amount at the end
-	roomjson = base64.b64decode(roomjson.encode()) #encode() turns string into binary string, decode base64 encoding
-	return json.loads(roomjson) #return json as python dictionary
+		roomjson = file.read().rstrip('\x00')	#store file content in string without NULL characters
+	roomjson = roomjson[1 : len(roomjson) - int(roomjson[0])]	#remove "salt" by reading the first character int(roomjson[0]) then remove this amount at the end
+	roomjson = base64.b64decode(roomjson.encode())	#encode() turns string into binary string, decode base64 encoding
+	return json.loads(roomjson)	#return json as python dictionary
 
 def openSave(path:str) ->dict:
 	with open(path) as file:
-		savejson = file.read().rstrip('\x00') #store file content in string without NULL characters
-	savejson = savejson[1+int(savejson[0]):len(savejson)-int(savejson[0])] #remove "salt" by reading the first character int(savejson[0]) then remove this amount at the start & end
-	savejson = base64.b64decode(savejson.encode()) #encode() turns string into binary string, decode base64 encoding
-	return json.loads(savejson) #return json as python dictionary
+		savejson = file.read().rstrip('\x00')	#store file content in string without NULL characters
+	savejson = savejson[1+int(savejson[0]):len(savejson)-int(savejson[0])]	#remove "salt" by reading the first character int(savejson[0]) then remove this amount at the start & end
+	savejson = base64.b64decode(savejson.encode())	#encode() turns string into binary string, decode base64 encoding
+	return json.loads(savejson)	#return json as python dictionary
 
 def writeJson(path:str, obj:dict, ind:int=4):
 	with open(path, 'wt') as file:
-		file.write(json.dumps(obj, indent=ind)) #write formatted json string into new text file
+		file.write(json.dumps(obj, indent=ind))	#write formatted json string into new text file
 
 #------ Exporting ------
 
 def openJson(path:str) ->dict:
 	with open(path) as file:
-		return json.loads(file.read()) #store file content in string
+		return json.loads(file.read())	#store file content in string
 
 def writeTxt(path:str, text:str):
 	with open(path, 'wb') as file:
-		file.write(text.encode()) #write formatted json string into new text file
+		file.write(text.encode())	#write formatted json string into new text file
 
 def writeWorld(path:str, obj:dict):
 	worldb64 = json.dumps(obj)
@@ -223,7 +236,7 @@ the first row of _prior_, then the second, etc.
 [
 	['x', 'y'],
 	['width'],
-	['height'], #height would be sorted before width otherwise
+	['height'],	#height would be sorted before width otherwise
 ]
 	"""
 	items = dict1.items()
@@ -247,12 +260,12 @@ than 0.
 		for x in range(20):
 			name = prefix+f'{x}-{y}'
 			tile = screen.get(name)
-			if tile is not None: #if there is a tile at that position
+			if tile is not None:	#if there is a tile at that position
 				match mode:
-					case 0: dico[name] = tile #raw mode
-					case 1: dico[name] = dec2bin(int(tile)) #binary mode
-					case 2: #simple mode
-						if prefix == 'tl_': dico[name] = unpackLiquid(int(tile)) #if liquid
+					case 0: dico[name] = tile	#raw mode
+					case 1: dico[name] = dec2bin(int(tile))	#binary mode
+					case 2:	#simple mode
+						if prefix == 'tl_': dico[name] = unpackLiquid(int(tile))	#if liquid
 						else: dico[name] = unpackTile(int(tile))
 	return dico
 
@@ -286,10 +299,10 @@ transform id being as follows :
 	6 : rotate & flip
 	7 : rotate & mirror & flip)
 	"""
-	id = tile%4096 #tile id
-	pal = (tile%131072)//4096 #palette id
-	fra = (tile%268435456)//131072 #frame offset
-	tra = tile//268435456 #transform
+	id = tile%4096	#tile id
+	pal = (tile%131072)//4096	#palette id
+	fra = (tile%268435456)//131072	#frame offset
+	tra = tile//268435456	#transform
 	return f"{id} {pal} {fra} {tra}"
 
 def unpackLiquid(tile: int):
@@ -307,10 +320,10 @@ set being as follows :
 	6 : fall
 	7 : fall surface) and transform id.
 	"""
-	id = tile%1024 #tile id + start offset
-	typ = (tile%16384)//1024 #type of liquid?
-	set = (tile%268435456)//16384 #set of liquid
-	tra = tile//268435456 #transform
+	id = tile%1024	#tile id + start offset
+	typ = (tile%16384)//1024	#type of liquid?
+	set = (tile%268435456)//16384	#set of liquid
+	tra = tile//268435456	#transform
 	return f"{id} {typ} {set} {tra}"
 
 def packTile(tile):

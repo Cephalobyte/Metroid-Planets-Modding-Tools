@@ -30,12 +30,12 @@ progress('IMPORTING WORLD')
 
 progress('SORTING KEYS')
 
-worldDict = sortDictPriority(worldDict, [ #sort the properties alphabetically with priorities
+worldDict = sortDictPriority(worldDict, [	#sort the properties alphabetically with priorities
 	['GENERAL','META'],
 	['ELEVATORS','ITEMS']
 ])
 
-worldDict['META'] = dict(sorted(worldDict['META'].items())) #sort META's properties alphabetically
+worldDict['META'] = dict(sorted(worldDict['META'].items()))	#sort META's properties alphabetically
 
 for data in [
 	['["GENERAL"]["spawns"]', []],
@@ -50,7 +50,7 @@ for data in [
 		['name'],
 		['designer'],
 	]]
-]: #sort the lists' properties alphabetically with priorities
+]:	#sort the lists' properties alphabetically with priorities
 	for stuff in eval(f'worldDict{data[0]}'):
 		stuf2 = stuff.copy()
 		stuff.clear()
@@ -80,13 +80,13 @@ def sortScreenProps(screen:dict,props:dict,tileMain:dict,tileBack:dict,tileFront
 		]]
 	]:
 		prop = props.get(data[0])
-		if prop is None: continue #prevent searching for inexistant property
+		if prop is None: continue	#prevent searching for inexistant property
 		for stuff in prop:
 			stuf2 = stuff.copy()
 			stuff.clear()
 			stuff.update(sortDictPriority(stuf2, data[1]))
 	
-	screen.update(sortDictPriority(props, [ #sort the screen's first properties
+	screen.update(sortDictPriority(props, [	#sort the screen's first properties
 		['x','y'],
 		['room_wi'],
 		['area'],
@@ -113,27 +113,38 @@ progress('SORTING SCREENS')
 
 sortScreens(worldDict['SCREENS'], tileMode)
 
-if colMode > 0: #if not raw mode
+if colMode > 0:	#if not raw mode
 
 	progress('TRANSLATING PALETTES')
 
-	for r,room in enumerate(worldDict["ROOMS"]): #go thru each room...
-		for p,pal in enumerate(room["PALETTES"]): #each palette...
-			for c,col in enumerate(pal[2:]): #each color...
-				worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(int(col)) #and convert
+	for r,room in enumerate(worldDict["ROOMS"]):	#go thru each room...
+		for p,pal in enumerate(room["PALETTES"]):	#each palette...
+			for c,col in enumerate(pal[2:]):	#each color...
+				worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(int(col))	#and convert
 
 progress('SAVING WORLD')
 
-writeJson(worldFileOut, worldDict) #write to the json file
+writeJson(worldFileOut, worldDict)	#write to the json file
 
 progress('WORLD IMPORTED!',True)
 
 if getYesNoDialog('Preview the world?', defau=True):
 	try: from modules.previewGenerator import prevMinimap
 	except: from previewGenerator import prevMinimap
-	prevMinimap(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]), worldDict["ELEVATORS"], worldDict["ITEMS"])
+	preview = prevMinimap(worldDict["SCREENS"], int(worldDict["GENERAL"]["world_w"]), int(worldDict["GENERAL"]["world_h"]), worldDict["ELEVATORS"], worldDict["ITEMS"], worldDict["GENERAL"]["spawns"])
+	print(preview)
 
-	# if getYesNoDialog('Save to text file?', defau=False):
-	# 	''
-	# 	with open(worldFileOut.removesuffix('.json'))
+	prevFileOut = worldFileIn.removesuffix('world') + 'prevMM.txt'
+	if getYesNoDialog(
+		'Save to text file?',
+		['Will be saved as :\n'+prevFileOut],
+		False
+	):
+
+		progress('SAVING MINIMAP')
+
+		writeTxt(prevFileOut, preview)
+
+		progress('PREVIEW SAVED!',True)
+
 pE2C()
