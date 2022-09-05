@@ -250,6 +250,7 @@ def openJson(path:str) ->dict:
 def writeTxt(path:str, text:str):
 	with open(path, 'wb') as file:
 		file.write(text.encode())	#write string into new text file
+	os.system('notepad.exe '+ path)
 
 def writeWorld(path:str, obj:dict):
 	worldb64 = json.dumps(obj)

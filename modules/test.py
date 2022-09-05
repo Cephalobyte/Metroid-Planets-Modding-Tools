@@ -84,4 +84,13 @@ from utils import *
 # 		msg += str(j+1)
 # print(msg)
 
+# import os
+# os.system('mode 50')
+# cmd = 'color 5E'
+# os.system(cmd)
+
+# print("\x1b[8;40;80t")
+# print('\x1b[5;31;43m',os.get_terminal_size(),'\x1b[0;0m')
+# print(os.get_terminal_size())
+
 pE2C()

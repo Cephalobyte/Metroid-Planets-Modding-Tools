@@ -20,5 +20,8 @@
 		"World Settings": {},
 		"Room Settings": {},
 		"Save Settings": {}
+	},
+	"Misc Settings": {
+		"Preview Gen Settings": {}
 	}
 }
