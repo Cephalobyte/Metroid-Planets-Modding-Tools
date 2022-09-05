@@ -22,40 +22,30 @@
 # ██■■██
 # area0, Crat, Brin, Norf, Kraid, Ridley, Tout, WrSh, Unused, ... 
 
-try: from modules.utils import *
-except: from utils import *
-
 import re
 import os
 
+try: from modules.utils import *
+except: from utils import *
+
 AREACHARDICT = {
-	"area 0":				'░ ',
-	"Crateria":			'██',
-	"Brinstar":			'█▓',
-	"Norfair":			'▓▒',
-	"Kraid area":		'▓▓',
-	"Ridley area":	'▒▒',
-	"Tourian":			'░░',
-	"Wrecked Ship":	'▒░',
-	"Area 8":				'█▒',
-	"Area 9":				'█░',
-	"Area 10":			'█ ',
-	"Area 11":			'▓░',
-	"Area 12":			'▓ ',
-	"Area 13":			'▒ ',
-	"Area 14":			'[]'
+	"area 0":				'░ ',	#\033[m
+	"Crateria":			'██',	#\033[94m
+	"Brinstar":			'█▓',	#\033[32m
+	"Norfair":			'▓▒',	#\033[91m
+	"Kraid area":		'▓▓',	#\033[90m
+	"Ridley area":	'▒▒',	#\033[95m
+	"Tourian":			'░░',	#\033[36m
+	"Wrecked Ship":	'▒░',	#\033[33m
+	"Area 8":				'█▒',	#\033[m
+	"Area 9":				'█░',	#\033[m
+	"Area 10":			'█ ',	#\033[m
+	"Area 11":			'▓░',	#\033[m
+	"Area 12":			'▓ ',	#\033[m
+	"Area 13":			'▒ ',	#\033[m
+	"Area 14":			'[]'	#\033[m
 }
 
-fileIn, prevFileOut, levelType = getInOutFileDialog(
-	['world','json'],
-	'prevMM.txt'
-)
-
-print(levelType)
-match levelType:
-	case '.json': levelDict = openJson(fileIn)
-	case '.room': levelDict = openRoom(fileIn)
-	case _: levelDict = openWorld(fileIn)
 
 def getMMEmptyScreen(x:int, y:int) ->list[str]:
 	coords = f'{x} {y}'.center(6)
@@ -189,10 +179,10 @@ def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], areas:list[str]=list
 		
 		#------ CLEAN CORNERS ------------------------------------------------------
 		
-		r1 = re.sub('╚\d╝\d', '    ', r1)	#not corners, large rooms
-		r3 = re.sub('╔\d╗\d', '    ', r3)
+		r1 = re.sub('╚[\da-f]╝[\da-f]', '    ', r1)	#not corners, large rooms
+		r3 = re.sub('╔[\da-f]╗[\da-f]', '    ', r3)
 
-		pat = '[╚╝╗╔](\d)'	#pattern to find remaining corners
+		pat = '[╚╝╗╔]([\da-f])'	#pattern to find remaining corners
 
 		for match in re.finditer(pat, r1):
 			r1 = replaceAtIndex(r1, areas[int(match.group(1), 16)], match.start())
@@ -203,6 +193,12 @@ def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], areas:list[str]=list
 		mmr1[r] = r1	#then re-assign them
 		mmr2[r] = r2
 		mmr3[r] = r3
+
+
+def getMMLegend():
+	rows = []
+
+	return ['a','b','c','d','e','f']
 
 #preview Minimap
 def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], itemsList:list[dict]=[], spwnsList:list[dict]=[], areacharList:list[str]=list(AREACHARDICT.values())):
@@ -249,6 +245,9 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 	
 	progress('ADDING LEGEND')	#---------------------------------------------------
 
+	# for r, row in enumerate(getMMLegend()):
+	# 	eval(f'mmr{r%3+1}').insert((r-1)//3, row)
+
 	mmr1.insert(0,'┌─ LEGEND ────────────┬────┬──────────────┬────┬─────────────┬────┬────────────────┬──┬─────────┐')
 	mmr2.insert(0,'│ ▀▄ │ Secret Wall    │ || │ Blue Door    │ ╞╡ │ Purple Door │ ║║ │ Green Door     │ •│ Item    │')
 	mmr3.insert(0,'│ ▀▄ │                │────│              │╨─╥─│             │════│                │ ○│ Upgrade │')
@@ -256,7 +255,7 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 	mmr2.insert(1,"│''..│                │┴─┬─│              │╩═╦═│             │╫──╫│ Elevator Rails │◘ │ End     │")
 	mmr3.insert(1,'│ ██ │ Crateria       │ ▓▒ │ Norfair      │ ░░ │ Tourian     │ █░ │ Area 9         │▓ │ Area 12 │')
 	mmr1.insert(2,'│ █▓ │ Brinstar       │ ▒▒ │ Ridley area  │ ░  │ Area 0      │ █  │ Area 10        │▒ │ Area 13 │')
-	mmr2.insert(2,"│ ▓▓ │ Kraid area     │ ▒░ │ Wrecked Ship │ █▒ │ Area 8      │ ▓░ │ Area 11        │XX│ Area 14 │")
+	mmr2.insert(2,"│ ▓▓ │ Kraid area     │ ▒░ │ Wrecked Ship │ █▒ │ Area 8      │ ▓░ │ Area 11        │[]│ Area 14 │")
 	mmr3.insert(2,'└────┴────────────────┴────┴──────────────┴────┴─────────────┴────┴────────────────┴──┴─────────┘')
 
 	progress('COMBINING ROWS')	#-------------------------------------------------
@@ -270,31 +269,61 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 	if os.get_terminal_size().columns < max([102, width * 6]):	#if the window isn't large enough for the map
 		os.system(f'mode {max([102, width * 6])}')	#enlarge it
 
+	print(minimap)
+
 	return minimap
 
-match levelType:
-	case _:
-		preview = prevMinimap(
-			levelDict["SCREENS"],
-			int(levelDict["GENERAL"]["world_w"]),
-			int(levelDict["GENERAL"]["world_h"]),
-			levelDict["ELEVATORS"],
-			levelDict["ITEMS"],
-			levelDict["GENERAL"]["spawns"]
-		)
 
-print(preview)
+def previewGenerator():
+	fileIn, prevFileOut, levelType = getInOutFileDialog(
+		['world','json'],
+		'prevMM.txt'
+	)
 
-if getYesNoDialog(
-	'Save to text file?',
-	['Will be saved as :\n'+prevFileOut],
-	False
-):
+	# print(levelType)
+	match levelType:
+		case '.json': levelDict = openJson(fileIn)
+		case '.room': levelDict = openRoom(fileIn)
+		case _: levelDict = openWorld(fileIn)
 
-	progress('SAVING MINIMAP')	#-------------------------------------------------
+	match levelType:
+		case _:
+			# match getOptionDialog(
+			# 	'How do I render the '
+			# 	):
+			# 	case 0: 
 
-	writeTxt(prevFileOut, preview)
+			preview = prevMinimap(
+				levelDict["SCREENS"],
+				int(levelDict["GENERAL"]["world_w"]),
+				int(levelDict["GENERAL"]["world_h"]),
+				levelDict["ELEVATORS"],
+				levelDict["ITEMS"],
+				levelDict["GENERAL"]["spawns"]
+			)
 
-	progress('PREVIEW SAVED!',True)	#---------------------------------------------
+	if getYesNoDialog(
+		'Save to text file?',
+		['Will be saved as :\n'+prevFileOut],
+		False
+	):
 
-pE2C()
+		progress('SAVING MINIMAP')	#-----------------------------------------------
+
+		writeTxt(prevFileOut, preview)
+
+		progress('PREVIEW SAVED!',True)	#-------------------------------------------
+
+
+if __name__ == '__main__':	#if module was run
+	os.system('cls')	#allows ANSI escape sequences
+
+	previewGenerator()	#run program
+
+	while getYesNoDialog(
+		'Another?',
+		defau = False
+	):
+		previewGenerator()	#run program
+
+	pE2C()

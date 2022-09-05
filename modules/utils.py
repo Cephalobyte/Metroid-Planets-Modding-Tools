@@ -41,23 +41,23 @@ def steptodo(step:str, newLine:bool=False):
 def progress(step:str, done=False):
 	"""Report the step progression"""
 	if not done: step += '...'
-	print(f' {step} '.center(60,'▒'))
+	print('\033[95m'+f' {step} '.center(60,'▒') +'\033[97m')
 
 def protip(tip:str):
 	"""Print useful info"""
-	print('(i) '+tip)
+	print('\033[94m(i) '+ tip +'\033[97m')
 
 def optiontip(id, tip:str, margin:int=3):
 	"""Print an option with a description"""
-	print(str(id).rjust(margin)+' : '+tip)
+	print(str(id).rjust(margin)+' : \033[94m'+ tip +'\033[97m')
 
 def woops(wrn:str):
 	"""Print a warning"""
-	print('/!\\'+f' {wrn} '.center(54,'_')+'/!\\')
+	print('\033[4;33m/!\\'+f' {wrn} '.center(54,'_')+'/!\\', end='\n\033[0;97m')
 
 def pE2C():
 	"""'Press Enter to continue' Pauses the script until user interaction"""
-	input('Press Enter to continue...')
+	input('\033[4mPress Enter to continue...\033[0m')
 
 #------ Dialog -----------------------------------------------------------------
 
@@ -163,6 +163,9 @@ def getInOutFileDialog(fileTypeIn:str|list[str], fileTypeOut:str) ->tuple[str,st
 	fileOut = input().strip('"\'& ')
 	if not fileOut: fileOut = osp.splitext(fileIn)[0]	#replace with fileIn's path until extension if empty string
 	if not fileOut.endswith(extOut): fileOut += extOut	#add extension if missing
+
+	if isinstance(fileTypeIn, str):	#if not a list
+		return fileIn, fileOut	#return only necessary
 
 	return fileIn, fileOut, extIn
 

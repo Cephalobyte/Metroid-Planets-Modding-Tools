@@ -1,3 +1,5 @@
+from os import system
+
 from modules.utils import *
 
 mainOptions = [
@@ -13,16 +15,24 @@ otherOptions = {
 	'quit':'Done for now?'
 }
 
-while True:
-	match getOptionDialog(
-		'What would you like to do?', mainOptions, otherOptions
-	):
-		case 0:
-			import modules.world2json
-		case 1:
-			import modules.json2world
-		case 'quit':
-			print('See you next Mission!')
-			break
 
-pE2C()
+def main():
+	while True:
+		match getOptionDialog(
+			'What would you like to do?', mainOptions, otherOptions
+		):
+			case 0:
+				import modules.world2json
+			case 1:
+				import modules.json2world
+			case 'quit':
+				print('See you next Mission!')
+				break
+
+
+if __name__ == '__main__':
+	system('cls')	#allows ANSI escape sequences
+
+	main()	#run program
+
+	pE2C()
