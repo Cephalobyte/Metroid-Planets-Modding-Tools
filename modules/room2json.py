@@ -8,36 +8,36 @@ def sortScreenProps(screen:dict, props:dict, tileMain:dict, tileBack:dict, tileF
 	screen.clear()
 	for data in [
 		["BLOCKS", [
-			['wi'],
 			['type','x','y'],
 		]],
 		["DOORS", [
-			['wi'],
 			['type'],
 			['color','x','y'],
 			['pos']
 		]],
+		["ELEVATORS", [
+			['type','x','y']
+		]],
 		["ENEMIES", [
-			['n','wi'],
-			['type','x','y'],
+			['n','type','x','y'],
 			['rot'],
-			['dir','level','lvl'],
+			['dir'],
 			['lock']
+		]],
+		["ITEMS", [
+			['type','x','y']
 		]]
 	]:
-		prop = props.get(data[0])
-		if prop is None: continue	#prevent searching for inexistant property
-		for stuff in prop:
+		for stuff in props[data[0]]:
 			stuf2 = stuff.copy()
 			stuff.clear()
 			stuff.update(sortDictPriority(stuf2, data[1]))
 	
-	screen.update(sortDictPriority(props, [	#sort the screen's first properties
+	screen.update(sortDictPriority(props, [
 		['x','y'],
-		['room_wi'],
 		['area'],
-		['scroll_r','scroll_u'],
-		['scroll_l'],
+		['scroll_l','scroll_u'],
+		['scroll_r'],
 		['scroll_d']
 	]))
 	screen.update(tileMain)
@@ -65,10 +65,10 @@ def sortScreens(screens:dict, tileM:int):
 		)
 
 
-def world2json():
-	worldFileIn, worldFileOut = getInOutFileDialog('world','json')
+def room2json():
+	roomFileIn, roomFileOut = getInOutFileDialog('room','json')
 
-	worldDict = openWorld(worldFileIn)
+	roomDict = openRoom(roomFileIn)
 
 	tileMode = getOptionDialog(	#choose tile display mode
 		'Choose tile number display mode',
@@ -89,96 +89,93 @@ def world2json():
 		defau=1
 	)
 
-	progress('IMPORTING WORLD')	#-------------------------------------------------
+	progress('IMPORTING ROOM')	#-------------------------------------------------
 
 	#------ Sorting --------------------------------------------------------------
 
 	progress('SORTING KEYS')	#---------------------------------------------------
-
-	worldDict = sortDictPriority(worldDict, [	#sort the properties alphabetically with priorities
-		['GENERAL','META'],
-		['ELEVATORS','ITEMS']
-	])
-
-	worldDict['META'] = dict(sorted(worldDict['META'].items()))	#sort META's properties alphabetically
-
+	
+	roomDict = dict(sorted(roomDict.items()))
 	for data in [
-		['["GENERAL"]["spawns"]', []],
-		['["BOSS LOCATIONS"]', [
-			['wi','x','y'],
+		["GENERAL", [
+			['room_name'],
+			['designer_name','difficulty','variant'],
+			['loc_custom_1','loc_custom_1_name','loc_custom_2','loc_custom_2_name']
 		]],
-		['["ELEVATORS"]', [
-			['screen_x','screen_y','x','y']
+		["META DATA", [
+			['id_key','last_save','studio_version'],
+			['patch_A','patch_B','patch_C','patch_D'],
+			['user_room'],
+			['playable'],
 		]],
-		['["ITEMS"]', []],
-		['["ROOMS"]', [
-			['name'],
-			['designer'],
-		]]
-	]:	#sort the lists' properties alphabetically with priorities
-		for stuff in eval(f'worldDict{data[0]}'):
-			stuf2 = stuff.copy()
-			stuff.clear()
-			stuff.update(sortDictPriority(stuf2, data[1]))
+	]:
+		roomDict[data[0]] = sortDictPriority(roomDict[data[0]],data[1])
+
+	for stuff in roomDict["PATHING"]:
+		stuf2 = stuff.copy()
+		stuff.clear()
+		stuff.update(sortDictPriority(stuf2, [
+			['start'],
+			['end']
+		]))
 
 	#------ Sort & Readability ---------------------------------------------------
 
 	progress('SORTING SCREENS')	#-------------------------------------------------
 
-	sortScreens(worldDict['SCREENS'], tileMode)
+	sortScreens(roomDict['SCREENS'], tileMode)
 
 	if colMode > 0:	#if not raw mode
 
 		progress('TRANSLATING PALETTES')
 
-		for r,room in enumerate(worldDict["ROOMS"]):	#go through each room...
-			for p,pal in enumerate(room["PALETTES"]):		#each palette...
-				for c,col in enumerate(pal[2:]):					#each color...
-					worldDict["ROOMS"][r]["PALETTES"][p][c+2] = gmdecc2Hexc(int(col))	#and convert
+		for p, pal in enumerate(roomDict["PALETTES"]):	#go through each palette...
+			for c,col in enumerate(pal[2:]):							#each color...
+				roomDict["PALETTES"][p][c+2] = gmdecc2Hexc(col)
 
-	progress('SAVING WORLD')	#---------------------------------------------------
+	progress('SAVING ROOM')	#---------------------------------------------------
 
-	writeJson(worldFileOut, worldDict)	#write to the json file
+	writeJson(roomFileOut, roomDict)	#write to the json file
 
-	progress('WORLD IMPORTED!',True)	#-------------------------------------------
+	progress('ROOM IMPORTED!',True)	#-------------------------------------------
 
-	if getYesNoDialog('Preview the world?', defau=True):
+	# if getYesNoDialog('Preview the room?', defau=True):
 
-		try: from modules.previewGenerator import prevMinimap
-		except: from previewGenerator import prevMinimap
+	# 	try: from modules.previewGenerator import prevMinimap
+	# 	except: from previewGenerator import prevMinimap
 
-		preview = prevMinimap(
-			worldDict["SCREENS"],
-			int(worldDict["GENERAL"]["world_w"]),
-			int(worldDict["GENERAL"]["world_h"]),
-			worldDict["ELEVATORS"],
-			worldDict["ITEMS"],
-			worldDict["GENERAL"]["spawns"]
-		)
+	# 	preview = prevMinimap(
+	# 		roomDict["SCREENS"],
+	# 		int(roomDict["GENERAL"]["room_w"]),
+	# 		int(roomDict["GENERAL"]["room_h"]),
+	# 		roomDict["ELEVATORS"],
+	# 		roomDict["ITEMS"],
+	# 		roomDict["GENERAL"]["spawns"]
+	# 	)
 
-		prevFileOut = worldFileIn.removesuffix('world') + 'prevMM.txt'
-		if getYesNoDialog(
-			'Save to text file?',
-			['Will be saved as :\n'+prevFileOut],
-			False
-		):
+	# 	prevFileOut = roomFileIn.removesuffix('room') + 'prevMM.txt'
+	# 	if getYesNoDialog(
+	# 		'Save to text file?',
+	# 		['Will be saved as :\n'+prevFileOut],
+	# 		False
+	# 	):
 
-			progress('SAVING MINIMAP')	#---------------------------------------------
+	# 		progress('SAVING MINIMAP')	#---------------------------------------------
 
-			writeTxt(prevFileOut, preview)
+	# 		writeTxt(prevFileOut, preview)
 
-			progress('PREVIEW SAVED!',True)	#-----------------------------------------
+	# 		progress('PREVIEW SAVED!',True)	#-----------------------------------------
 
 
 if __name__ == '__main__':	#if module was run
 	system('cls')	#allows ANSI escape sequences
 
-	world2json()	#run module
+	room2json()	#run module
 
 	while getYesNoDialog(
 		'Another?',
 		defau = False
 	):
-		world2json()
+		room2json()
 
 	pE2C()
