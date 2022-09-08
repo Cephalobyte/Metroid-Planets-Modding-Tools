@@ -12,6 +12,7 @@ mainOptions = [
 ]
 otherOptions = {
 	# 'prefs':'Manage your preferences',
+	'preview':'Generate ASCII art from your world or json file and save them in a txt file',
 	'quit':'Done for now?'
 }
 
@@ -22,9 +23,17 @@ def main():
 			'What would you like to do?', mainOptions, otherOptions
 		):
 			case 0:
-				import modules.world2json
+				from modules.world2json import world2json
+				world2json()
 			case 1:
-				import modules.json2world
+				from modules.json2world import json2world
+				json2world()
+			case 2:
+				from modules.room2json import room2json
+				room2json()
+			case 'preview':
+				from modules.previewGenerator import previewGenerator
+				previewGenerator()
 			case 'quit':
 				print('See you next Mission!')
 				break

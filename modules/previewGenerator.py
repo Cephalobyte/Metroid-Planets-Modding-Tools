@@ -25,26 +25,48 @@
 import re
 import os
 
-try: from modules.utils import *
-except: from utils import *
+if __name__ == '__main__': from utils import getInOutFileDialog, getYesNoDialog, openJson, openRoom, openWorld, pE2C, progress, replaceAtIndex, writeTxt
+else: from modules.utils import getInOutFileDialog, getYesNoDialog, openJson, openRoom, openWorld, pE2C, progress, replaceAtIndex, writeTxt
+
+#============ Constants ================================================================================================
 
 AREACHARDICT = {
-	"area 0":				'░ ',	#\033[m
-	"Crateria":			'██',	#\033[94m
-	"Brinstar":			'█▓',	#\033[32m
-	"Norfair":			'▓▒',	#\033[91m
-	"Kraid area":		'▓▓',	#\033[90m
-	"Ridley area":	'▒▒',	#\033[95m
-	"Tourian":			'░░',	#\033[36m
-	"Wrecked Ship":	'▒░',	#\033[33m
-	"Area 8":				'█▒',	#\033[m
-	"Area 9":				'█░',	#\033[m
-	"Area 10":			'█ ',	#\033[m
-	"Area 11":			'▓░',	#\033[m
-	"Area 12":			'▓ ',	#\033[m
-	"Area 13":			'▒ ',	#\033[m
-	"Area 14":			'[]'	#\033[m
+	"area 0":				'░,',
+	"Crateria":			'██',
+	"Brinstar":			'█▓',
+	"Norfair":			'▓▒',
+	"Kraid area":		'▓▓',
+	"Ridley area":	'▒▒',
+	"Tourian":			'░░',
+	"Wrecked Ship":	'▒░',
+	"Area 8":				'█▒',
+	"Area 9":				'█░',
+	"Area 10":			'█,',
+	"Area 11":			'▓░',
+	"Area 12":			'▓,',
+	"Area 13":			'▒,',
+	"Area 14":			'[]'
 }
+
+AREAANSIICOL = {
+	"area 0":				'97',
+	"Crateria":			'34',
+	"Brinstar":			'32',
+	"Norfair":			'91',
+	"Kraid area":		'90',
+	"Ridley area":	'95',
+	"Tourian":			'36',
+	"Wrecked Ship":	'33',
+	"Area 8":				'34',
+	"Area 9":				'32',
+	"Area 10":			'91',
+	"Area 11":			'90',
+	"Area 12":			'95',
+	"Area 13":			'36',
+	"Area 14":			'33'
+}
+
+#============ Functions ================================================================================================
 
 
 def getMMEmptyScreen(x:int, y:int) ->list[str]:
@@ -194,11 +216,19 @@ def cleanMM(mmr1:list[str], mmr2:list[str], mmr3:list[str], areas:list[str]=list
 		mmr2[r] = r2
 		mmr3[r] = r3
 
-
+#get legend from content
 def getMMLegend():
 	rows = []
-
 	return ['a','b','c','d','e','f']
+
+# print colored areas
+def getMMColorPrev(mm:str, chars:list[str]=['██'], cols:list[str]=['94']):
+	for a, c in enumerate(chars):
+		pat = fr'((?:{re.escape(c)})+)'
+		repl = fr'\033[{cols[a]}m\1\033[0m'
+
+		mm = re.sub(pat, repl, mm, flags=re.MULTILINE)
+	return mm
 
 #preview Minimap
 def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], itemsList:list[dict]=[], spwnsList:list[dict]=[], areacharList:list[str]=list(AREACHARDICT.values())):
@@ -253,8 +283,8 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 	mmr3.insert(0,'│ ▀▄ │                │────│              │╨─╥─│             │════│                │ ○│ Upgrade │')
 	mmr1.insert(1,'│ :: │ Secret Passage │ ├┤ │ Red Door     │ ╠╣ │ Combat Door │▼ ▲ │ Elevator       │§ │ Spawn   │')
 	mmr2.insert(1,"│''..│                │┴─┬─│              │╩═╦═│             │╫──╫│ Elevator Rails │◘ │ End     │")
-	mmr3.insert(1,'│ ██ │ Crateria       │ ▓▒ │ Norfair      │ ░░ │ Tourian     │ █░ │ Area 9         │▓ │ Area 12 │')
-	mmr1.insert(2,'│ █▓ │ Brinstar       │ ▒▒ │ Ridley area  │ ░  │ Area 0      │ █  │ Area 10        │▒ │ Area 13 │')
+	mmr3.insert(1,'│ ██ │ Crateria       │ ▓▒ │ Norfair      │ ░░ │ Tourian     │ █░ │ Area 9         │▓,│ Area 12 │')
+	mmr1.insert(2,'│ █▓ │ Brinstar       │ ▒▒ │ Ridley area  │ ░, │ Area 0      │ █, │ Area 10        │▒,│ Area 13 │')
 	mmr2.insert(2,"│ ▓▓ │ Kraid area     │ ▒░ │ Wrecked Ship │ █▒ │ Area 8      │ ▓░ │ Area 11        │[]│ Area 14 │")
 	mmr3.insert(2,'└────┴────────────────┴────┴──────────────┴────┴─────────────┴────┴────────────────┴──┴─────────┘')
 
@@ -266,10 +296,16 @@ def prevMinimap(screens:dict, width:int, height:int, elevsList:list[dict]=[], it
 
 	progress('PREVIEW GENERATED!',True)	#-----------------------------------------
 
+	progress('PREVIEW GENERATED!',True)	#-----------------------------------------
+
 	if os.get_terminal_size().columns < max([102, width * 6]):	#if the window isn't large enough for the map
 		os.system(f'mode {max([102, width * 6])}')	#enlarge it
 
-	print(minimap)
+	print(getMMColorPrev(
+		minimap, 
+		[a for a in AREACHARDICT.values()],
+		[c for c in AREAANSIICOL.values()]
+	))
 
 	return minimap
 
@@ -299,7 +335,8 @@ def previewGenerator():
 				int(levelDict["GENERAL"]["world_h"]),
 				levelDict["ELEVATORS"],
 				levelDict["ITEMS"],
-				levelDict["GENERAL"]["spawns"]
+				levelDict["GENERAL"]["spawns"],
+				list(AREACHARDICT.values())
 			)
 
 	if getYesNoDialog(

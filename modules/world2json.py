@@ -1,68 +1,104 @@
 from os import system
 
-try: from modules.utils import *
-except: from utils import *
+if __name__ == '__main__': from utils import *
+else: from modules.utils import *
+
+#============ Constants ================================================================================================
+
+WORLDPRIORITIES = [
+	['GENERAL','META'],
+	['ELEVATORS','ITEMS']
+]
+
+WORLDLISTSPRIORITIES = [
+	['["GENERAL"]["spawns"]', [
+	]],
+	['["BOSS LOCATIONS"]', [
+		['wi','x','y'],
+	]],
+	['["ELEVATORS"]', [
+		['screen_x','screen_y','x','y']
+	]],
+	['["ITEMS"]', []],
+	['["ROOMS"]', [
+		['name'],
+		['designer'],
+	]]
+]
+
+WORLDSCREENSPRIORITIES = [
+	['x','y'],
+	['room_wi'],
+	['area'],
+	['scroll_r','scroll_u'],
+	['scroll_l'],
+	['scroll_d']
+]
+
+WORLDSCREENSLISTSPRIORITIES = [
+	["BLOCKS", [
+		['wi'],
+		['type','x','y'],
+	]],
+	["DOORS", [
+		['wi'],
+		['type'],
+		['color','x','y'],
+		['pos']
+	]],
+	["ENEMIES", [
+		['n','wi'],
+		['type','x','y'],
+		['rot'],
+		['dir','level','lvl'],
+		['lock']
+	]]
+]
+
+#============ Functions ================================================================================================
 
 
-def sortScreenProps(screen:dict, props:dict, tileMain:dict, tileBack:dict, tileFront:dict, tileLiquid:dict):
+def sortScreenProps(screen:dict, props:dict, screenPriorities:list=[], screenListPriorities:list=[]):
+	"""
+Sort properties present in screens with priorities
+	"""
 	screen.clear()
-	for data in [
-		["BLOCKS", [
-			['wi'],
-			['type','x','y'],
-		]],
-		["DOORS", [
-			['wi'],
-			['type'],
-			['color','x','y'],
-			['pos']
-		]],
-		["ENEMIES", [
-			['n','wi'],
-			['type','x','y'],
-			['rot'],
-			['dir','level','lvl'],
-			['lock']
-		]]
-	]:
-		prop = props.get(data[0])
-		if prop is None: continue	#prevent searching for inexistant property
+
+	for data in screenListPriorities:
+		prop = props.get(data[0])	#get screen property by name
+		if prop is None: continue	#prevent searching for a non-existent property
+
 		for stuff in prop:
 			stuf2 = stuff.copy()
 			stuff.clear()
 			stuff.update(sortDictPriority(stuf2, data[1]))
 	
-	screen.update(sortDictPriority(props, [	#sort the screen's first properties
-		['x','y'],
-		['room_wi'],
-		['area'],
-		['scroll_r','scroll_u'],
-		['scroll_l'],
-		['scroll_d']
-	]))
-	screen.update(tileMain)
-	screen.update(tileBack)
-	screen.update(tileFront)
-	screen.update(tileLiquid)
+	screen.update(sortDictPriority(props, screenPriorities))	#sort the screen's first properties
 
 
-def sortScreens(screens:dict, tileM:int):
+def sortScreens(screens:dict, tileM:int, screenPriorities:list=[], screenListPriorities:list=[]):
+	"""
+Sort screen & rearrange tiles with translation.
+	"""
 	for screen in screens:
 		if isinstance(screen, (float, int)): continue	#if screen is "disabled", ignore
 
 		props = dict([(p,screen[p]) for p in screen if p[:3] not in ['tm_','tb_','tf_','tl_']])
-		tileMain = sortTiles(screen,'tm_',tileM)
-		tileBack = sortTiles(screen,'tb_',tileM)
-		tileFront = sortTiles(screen,'tf_',tileM)
-		tileLiquid = sortTiles(screen,'tl_',tileM)
+
+		tileMain = sortTiles(screen, 'tm_', tileM)
+		tileBack = sortTiles(screen, 'tb_', tileM)
+		tileFront = sortTiles(screen, 'tf_', tileM)
+		tileLiquid = sortTiles(screen, 'tl_', tileM)
 		sortScreenProps(
 			screen,
 			props,
-			tileMain,
-			tileBack,
-			tileFront,
-			tileLiquid
+			screenPriorities,
+			screenListPriorities
 		)
+		screen.update(tileMain)	#add tile layers back to the screen
+		screen.update(tileBack)
+		screen.update(tileFront)
+		screen.update(tileLiquid)
 
 
 def world2json():
@@ -95,27 +131,14 @@ def world2json():
 
 	progress('SORTING KEYS')	#---------------------------------------------------
 
-	worldDict = sortDictPriority(worldDict, [	#sort the properties alphabetically with priorities
-		['GENERAL','META'],
-		['ELEVATORS','ITEMS']
-	])
+	worldDict = sortDictPriority(worldDict, WORLDPRIORITIES)	#sort the properties alphabetically with priorities
 
 	worldDict['META'] = dict(sorted(worldDict['META'].items()))	#sort META's properties alphabetically
 
-	for data in [
-		['["GENERAL"]["spawns"]', []],
-		['["BOSS LOCATIONS"]', [
-			['wi','x','y'],
-		]],
-		['["ELEVATORS"]', [
-			['screen_x','screen_y','x','y']
-		]],
-		['["ITEMS"]', []],
-		['["ROOMS"]', [
-			['name'],
-			['designer'],
-		]]
-	]:	#sort the lists' properties alphabetically with priorities
+	for data in WORLDLISTSPRIORITIES:	#sort the lists' properties alphabetically with priorities
+		prop = eval(f'worldDict{data[0]}')	#get property by name
+		if prop is None: continue	#prevent searching for a non-existent property
+
 		for stuff in eval(f'worldDict{data[0]}'):
 			stuf2 = stuff.copy()
 			stuff.clear()
@@ -125,7 +148,12 @@ def world2json():
 
 	progress('SORTING SCREENS')	#-------------------------------------------------
 
-	sortScreens(worldDict['SCREENS'], tileMode)
+	sortScreens(
+		worldDict['SCREENS'],
+		tileMode,
+		WORLDSCREENSPRIORITIES,
+		WORLDSCREENSLISTSPRIORITIES
+	)
 
 	if colMode > 0:	#if not raw mode
 
@@ -144,8 +172,8 @@ def world2json():
 
 	if getYesNoDialog('Preview the world?', defau=True):
 
-		try: from modules.previewGenerator import prevMinimap
-		except: from previewGenerator import prevMinimap
+		if __name__ == '__main__': from previewGenerator import prevMinimap
+		else: from modules.previewGenerator import prevMinimap
 
 		preview = prevMinimap(
 			worldDict["SCREENS"],

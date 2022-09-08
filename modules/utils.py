@@ -19,14 +19,16 @@ NAN = float('nan')
 
 #============ General ==================================================================================================
 
-def replaceAtIndex(text:str, rep:str, at:int=0) ->str:
+def replaceAtIndex(text:str, rep:str, at:int=0, l:int=None) ->str:
 	"""
 Replace a segment of a string :text: from a given position :at: until the given replacement's :rep: length.
 :param text: `<str>` text to be modified
 :param rep: `<str>` replacement segment
 :param at: `<int>` position from which the segment starts overwriting the text.
+:param l: `<int>` length of the replacement, defaults to len(rep)
 	"""
-	return text[:at].ljust(at) + rep + text[at+len(rep):]
+	if l is None: l = len(rep)
+	return text[:at].ljust(at) + rep + text[at+l:]
 
 #============ Input Dialog =============================================================================================
 from os import path as osp
@@ -250,10 +252,10 @@ def openJson(path:str) ->dict:
 	with open(path) as file:
 		return json.loads(file.read())	#store file content in string
 
-def writeTxt(path:str, text:str):
+def writeTxt(path:str, text:str, openFile:bool=False):
 	with open(path, 'wb') as file:
 		file.write(text.encode())	#write string into new text file
-	os.system('notepad.exe '+ path)
+	if openFile: os.system('notepad.exe '+ path)
 
 def writeWorld(path:str, obj:dict):
 	worldb64 = json.dumps(obj)
@@ -293,12 +295,12 @@ It will sort every key from the first row of :prior:, then the second, etc.
 
 	def sor(key):
 		k = key[0]
-		i = len(items)
+		i = len(items)	#default order is last
 
 		for pi, pn in enumerate(prior):
-			if k == pn or k in pn: i = pi	#if key is or is in the priority name/names, 
+			if k == pn or k in pn: i = pi	#if key is or is in the priority name/names, set the order to the priority index
 		
-		return (i, k.swapcase())
+		return (i, k.swapcase())	#return the order as key, content as value
 
 	return dict(sorted(items, key=sor))
 

@@ -1,7 +1,7 @@
 from os import system
 
-try: from modules.utils import *
-except: from utils import *
+if __name__ == '__main__': from utils import *
+else: from modules.utils import *
 
 
 def sortScreenProps(screen:dict, props:dict, tileMain:dict, tileBack:dict, tileFront:dict, tileLiquid:dict):
@@ -139,10 +139,10 @@ def room2json():
 
 	progress('ROOM IMPORTED!',True)	#-------------------------------------------
 
-	# if getYesNoDialog('Preview the room?', defau=True):
-
-	# 	try: from modules.previewGenerator import prevMinimap
-	# 	except: from previewGenerator import prevMinimap
+	if getYesNoDialog('Preview the room?', defau=True):
+		
+		if __name__ == '__main__': from previewGenerator import prevMinimap
+		else: from modules.previewGenerator import prevMinimap
 
 	# 	preview = prevMinimap(
 	# 		roomDict["SCREENS"],
