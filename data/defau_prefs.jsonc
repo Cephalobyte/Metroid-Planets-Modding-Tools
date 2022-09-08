@@ -1,0 +1,27 @@
+{
+	"First Boot": true, //greetings
+	"Game Version": [1,27,7], //major, minor, patch
+	"Preferred Game Version": [1,27,7], //major, minor, patch
+	"World Version": [0,6,0], //major, minor, patch
+	"Preferred World Version": [0,6,0], //major, minor, patch
+	"Studio Version": [1,0,0], //major, minor, patch
+	"Preferred Studio Version": [1,0,0], //major, minor, patch
+	"Game Directory": null,
+	"Game Data Directory": null, //The one in AppData
+	"Worlds Folder": "Enigma Worlds",
+	"Rooms Folder": "Enigma Rooms",
+	"Saves Folder": "",
+	"Importer Settings": {
+		"World Settings": {},
+		"Room Settings": {},
+		"Save Settings": {}
+	},
+	"Exporter Settings": {
+		"World Settings": {},
+		"Room Settings": {},
+		"Save Settings": {}
+	},
+	"Misc Settings": {
+		"Preview Gen Settings": {}
+	}
+}

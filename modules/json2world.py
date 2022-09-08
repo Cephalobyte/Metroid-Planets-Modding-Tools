@@ -1,44 +1,116 @@
-from utils import *
+from os import system
 
-worldFileIn, worldFileOut = getFilesDialog('json','world')
+try: from modules.utils import *
+except: from utils import *
 
-worldDict = openJson(worldFileIn)
 
-newName, newId = getTweaksDialog(worldDict["META"]["name"], worldDict["META"]["id"])
+def json2world():
+	worldFileIn, worldFileOut = getInOutFileDialog(
+		'json',
+		'world'
+	)
 
-steptodo('TWEAKING...')
+	worldDict = openJson(worldFileIn)
 
-try: worldDict["META"]["name"] = newName
-except: woops("Couldn't rename the world")
-try: worldDict["META"]["id"] = newId
-except: woops("Couldn't tweak world Id")
+	newName, newId = getNameIdDialog(
+		worldDict["META"]["name"],	#current name
+		worldDict["META"]["id"]			#current id
+	)
 
-steptodo('TRANSLATING TILES...')
+	progress('RENAMING & IDENTIFYING')	#-----------------------------------------
 
-for screen in worldDict["SCREENS"]:
-	if isinstance(screen, float): continue #if screen is "disabled"
-	tiles = dict([(p,v) for p,v in screen.items() if p[:3] in ['tm_','tb_','tf_','tl_']]) #retrieve tiles
-	for co,tile in tiles.items():
-		if isinstance(tile, str):
-			if len(tile) >= 32: screen.update({co:float(bin2dec(tile))}) #binary mode
-			elif co[:3] == 'tl_': screen.update({co:float(packLiquid(tile))}) #simple mode (liquid)
-			else: screen.update({co:float(packTile(tile))}) #simple mode
-		else: #raw mode
-			protip('Raw tile values')
+	try: worldDict["META"]["name"] = newName
+	except: woops("Couldn't rename the world")
+	try: worldDict["META"]["id"] = newId
+	except: woops("Couldn't set new world Id")
+
+	progress('TRANSLATING TILES')	#-----------------------------------------------
+
+	for screen in worldDict["SCREENS"]:	#go through each screen...
+
+		if isinstance(screen, (float, int)): continue	#if screen is "disabled", ignore
+
+		tiles = dict(	#retrieve tiles
+			[
+				(p, v) for p, v in screen.items()
+				if p[:3] in ['tm_','tb_','tf_','tl_']
+			]
+		)
+
+		for co, tile in tiles.items(): #for each coordinate
+
+			if isinstance(tile, str):	#if not raw
+
+				if len(tile) >= 32:		#binary mode
+					screen.update({co:float(bin2dec(tile))})
+				
+				elif co[:3] == 'tl_':	#simple mode (liquid)
+					screen.update({co:float(packLiquidSimple(tile))})
+				else:									#simple mode (tile)
+					screen.update({co:float(packTileSimple(tile))})
+			
+			else:	#raw mode
+				progress('RAW TILE VALUES DETECTED',True)
+				progress('IGNORING TILE TRANSLATION')
+				break
+
+	progress('TRANSLATING PALETTES')	#-------------------------------------------
+
+	for r,room in enumerate(worldDict["ROOMS"]):	#go through each room...
+		for p,pal in enumerate(room["PALETTES"]):	#each palette...
+			for c,col in enumerate(pal[2:]):	#each color...
+				if isinstance(col, str):	#if it's a hex color,
+					worldDict["ROOMS"][r]["PALETTES"][p][c+2] = hexc2Gmdecc(col)	#convert back
+				else: break
+			else: continue	#https://note.nkmk.me/en/python-break-nested-loops/
 			break
+		else: continue
+		break
 
-steptodo('TRANSLATING PALETTES...')
+	progress('EXPORTING WORLD')	#-------------------------------------------------
 
-for r,room in enumerate(worldDict["ROOMS"]):
-	for p,pal in enumerate(room["PALETTES"]):
-		for c,col in enumerate(pal[2:]):
-			if isinstance(col, str): worldDict["ROOMS"][r]["PALETTES"][p][c+2] = hexc2Gmdecc(col)
-			else: break
+	writeWorld(worldFileOut, worldDict)
 
-steptodo('EXPORTING WORLD...')
+	progress('WORLD EXPORTED!',True)	#-------------------------------------------
 
-writeWorld(worldFileOut, worldDict)
-writeJson(worldFileOut+'_exp.json', worldDict)
+	if getYesNoDialog('Preview the world?', defau=True):
 
-steptodo('WORLD EXPORTED!')
-input('Press Enter to continue...')
+		try: from modules.previewGenerator import prevMinimap
+		except: from previewGenerator import prevMinimap
+
+		preview = prevMinimap(
+			worldDict["SCREENS"],
+			int(worldDict["GENERAL"]["world_w"]),
+			int(worldDict["GENERAL"]["world_h"]),
+			worldDict["ELEVATORS"],
+			worldDict["ITEMS"],
+			worldDict["GENERAL"]["spawns"]
+		)
+
+		prevFileOut = worldFileIn.removesuffix('json') + 'prevMM.txt'
+
+		if getYesNoDialog(
+			'Save to text file?',
+			['Will be saved as :\n'+prevFileOut],
+			False
+		):
+
+			progress('SAVING MINIMAP')	#---------------------------------------------
+
+			writeTxt(prevFileOut, preview)
+
+			progress('PREVIEW SAVED!',True)	#-----------------------------------------
+
+
+if __name__ == '__main__':	#if module was run
+	system('cls')	#allows ANSI escape sequences
+
+	json2world()	#run program
+
+	while getYesNoDialog(
+		'Another?',
+		defau = False
+	):
+		json2world()
+
+	pE2C()
